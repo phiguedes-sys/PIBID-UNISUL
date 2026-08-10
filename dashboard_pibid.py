@@ -271,6 +271,46 @@ EMBEDDED_FORM_VISITAS = [
 # -------------------------------------------------------------
 # DATA LOADING FUNCTION (ROBUST GOOGLE SHEETS SYNC)
 # -------------------------------------------------------------
+
+# -------------------------------------------------------------
+# SAFE COLUMN MAPPING UTILITIES
+# -------------------------------------------------------------
+def map_columns_safely(df, rules):
+    mapped_cols = {}
+    used_original_cols = set()
+    mapped_standards = set()
+    
+    # First pass: try exact matches (case-insensitive)
+    for std_name, keywords in rules:
+        for col in df.columns:
+            if col in used_original_cols:
+                continue
+            if str(col).strip().lower() == std_name.lower():
+                mapped_cols[col] = std_name
+                used_original_cols.add(col)
+                mapped_standards.add(std_name)
+                break
+                
+    # Second pass: try keyword matches
+    for std_name, keywords in rules:
+        if std_name in mapped_standards:
+            continue
+        for col in df.columns:
+            if col in used_original_cols:
+                continue
+            col_str = str(col).lower()
+            if any(kw in col_str for kw in keywords):
+                mapped_cols[col] = std_name
+                used_original_cols.add(col)
+                mapped_standards.add(std_name)
+                break
+                
+    return df.rename(columns=mapped_cols)
+
+
+# -------------------------------------------------------------
+# DATA LOADING FUNCTION (ROBUST GOOGLE SHEETS SYNC)
+# -------------------------------------------------------------
 @st.cache_data
 def load_data(gsheets_url=None):
     df_narrativas = pd.DataFrame(EMBEDDED_NARRATIVAS)
@@ -297,30 +337,18 @@ def load_data(gsheets_url=None):
                 if narr_sheet:
                     df_narr_temp = pd.read_excel(export_url, sheet_name=narr_sheet)
                     if not df_narr_temp.empty:
-                        # Dynamic column mapper to prevent standard KeyErrors
-                        narr_col_map = {}
-                        for col in df_narr_temp.columns:
-                            col_str = str(col).lower()
-                            if "escola" in col_str or "núcleo" in col_str or "nucleo" in col_str:
-                                narr_col_map[col] = "Escola"
-                            elif "supervisor" in col_str:
-                                narr_col_map[col] = "Supervisor"
-                            elif "projeto" in col_str or "ação" in col_str or "acao" in col_str:
-                                narr_col_map[col] = "Projeto_Acao"
-                            elif "período" in col_str or "periodo" in col_str or "bimestre" in col_str:
-                                narr_col_map[col] = "Periodo_Bimestre"
-                            elif "metodologia" in col_str or "desenvolvido" in col_str:
-                                narr_col_map[col] = "Metodologia"
-                            elif "impacto" in col_str or "social" in col_str:
-                                narr_col_map[col] = "Impacto_Escola"
-                            elif "voz" in col_str or "bolsista" in col_str or "reflexiva" in col_str:
-                                narr_col_map[col] = "Voz_Bolsista"
-                            elif "dificuldade" in col_str or "superação" in col_str or "superacao" in col_str or "desafios" in col_str:
-                                narr_col_map[col] = "Dificuldades"
-                            elif "foto" in col_str or "link" in col_str or "imagem" in col_str:
-                                narr_col_map[col] = "Foto"
-                        df_narr_temp.rename(columns=narr_col_map, inplace=True)
-                        df_narrativas = df_narr_temp
+                        rules_narrativas = [
+                            ("Escola", ["escola", "núcleo", "nucleo"]),
+                            ("Supervisor", ["supervisor", "nome completo do supervisor"]),
+                            ("Projeto_Acao", ["projeto", "ação", "acao", "atividade"]),
+                            ("Periodo_Bimestre", ["período", "periodo", "bimestre", "mês", "mes"]),
+                            ("Metodologia", ["metodologia", "desenvolvido", "como foi desenvolvido", "descrição", "descricao"]),
+                            ("Impacto_Escola", ["impacto", "social", "pedagógico", "pedagogico", "escola"]),
+                            ("Voz_Bolsista", ["voz", "bolsista", "reflexiva", "depoimento", "id"]),
+                            ("Dificuldades", ["dificuldade", "superação", "superacao", "desafios", "problema"]),
+                            ("Foto", ["foto", "link", "imagem", "registro"])
+                        ]
+                        df_narrativas = map_columns_safely(df_narr_temp, rules_narrativas)
                 
                 # Load Visitas sheet (Form responses)
                 vis_sheet = None
@@ -331,32 +359,33 @@ def load_data(gsheets_url=None):
                 if vis_sheet:
                     df_vis_temp = pd.read_excel(export_url, sheet_name=vis_sheet)
                     if not df_vis_temp.empty:
-                        # Map columns dynamically based on headers
-                        col_map = {}
-                        for col in df_vis_temp.columns:
-                            if "Carimbo" in str(col) or "Timestamp" in str(col):
-                                col_map[col] = "Carimbo"
-                            elif "email" in str(col).lower() or "e-mail" in str(col).lower():
-                                col_map[col] = "Email"
-                            elif "supervisor" in str(col).lower():
-                                col_map[col] = "Supervisor"
-                            elif "data da visita" in str(col).lower():
-                                col_map[col] = "Data_Visita"
-                            elif "avaliação" in str(col).lower():
-                                col_map[col] = "Ficha_Avaliacao"
-                            elif "fotos" in str(col).lower():
-                                col_map[col] = "Fotos"
-                            elif "frequencia" in str(col).lower() or "frequência" in str(col).lower():
-                                col_map[col] = "Ficha_Frequencia"
-                        df_vis_temp.rename(columns=col_map, inplace=True)
-                        df_visitas = df_vis_temp
+                        rules_visitas = [
+                            ("Carimbo", ["carimbo", "timestamp", "data/hora"]),
+                            ("Email", ["email", "e-mail", "endereço", "endereco"]),
+                            ("Supervisor", ["supervisor", "nome completo"]),
+                            ("Data_Visita", ["data da visita", "data oficial"]),
+                            ("Fotos", ["fotos", "imagens", "anexe as fotos"]),
+                            ("Ficha_Avaliacao", ["avaliação", "avaliacao", "ficha de avaliação"]),
+                            ("Ficha_Frequencia", ["frequencia", "frequência", "ficha de frequencia"])
+                        ]
+                        df_visitas = map_columns_safely(df_vis_temp, rules_visitas)
                 
                 data_source_info = "Conectado à Planilha do Google Sheets Online 🟢"
                 st.sidebar.success("Sincronização qualitativa com o Google Sheets concluída!")
         except Exception as e:
             st.sidebar.error(f"Erro de conexão: certifique-se de que a planilha está compartilhada como 'Leitor público'. Detalhes: {e}")
             
+    # Ensure all expected columns exist with default values to prevent key errors
+    for col in ["Escola", "Supervisor", "Projeto_Acao", "Periodo_Bimestre", "Metodologia", "Impacto_Escola", "Voz_Bolsista", "Dificuldades", "Foto"]:
+        if col not in df_narrativas.columns:
+            df_narrativas[col] = ""
+            
+    for col in ["Carimbo", "Email", "Supervisor", "Data_Visita", "Fotos"]:
+        if col not in df_visitas.columns:
+            df_visitas[col] = ""
+            
     return df_narrativas, df_visitas, data_source_info
+
 
 # -------------------------------------------------------------
 # SIDEBAR - BRANDING & CONNECTIONS
