@@ -100,7 +100,8 @@ def get_direct_img_url(url):
         match_id = re.search(r"/file/d/([a-zA-Z0-9-_]+)", url)
     if match_id:
         file_id = match_id.group(1)
-        return "image", f"https://docs.google.com/uc?export=download&id={file_id}"
+        # Usando a API de renderização de miniaturas (thumbnails) do Google Drive, que ignora telas de aviso e CORS, funcionando perfeitamente no Streamlit
+        return "image", f"https://drive.google.com/thumbnail?id={file_id}&sz=w1000"
     # Standard web link
     if url.startswith("http"):
         return "image", url
@@ -136,7 +137,7 @@ EMBEDDED_NARRATIVAS = [
         "Impacto_Escola": "A assessoria de direção relatou uma redução notável de ruídos e correrias nos corredores e pátios nos dias de ação, transformando o recreio num espaço de respeito mútuo e integração sadia.",
         "Voz_Bolsista": "Os IDs vivenciaram os primeiros passos práticos da regência, aprendendo a planejar de forma interdisciplinar e articulando teorias de recreação cooperativa diretamente na prática escolar.",
         "Dificuldades": "O tempo do recreio é muito curto (15 minutos), exigindo agilidade extrema na organização do material para aproveitar cada minuto.",
-        "Foto": "https://images.unsplash.com/photo-1571210862729-78a52d3779a2?w=600"
+        "Foto": "https://drive.google.com/open?id=1RM3AUkqIsJKyG4KuyxG8-ExAX8KBln1R"
     },
     {
         "Escola": "EEB João Teixeira Nunes", 
@@ -147,7 +148,7 @@ EMBEDDED_NARRATIVAS = [
         "Impacto_Escola": "Estimulou fortemente o protagonismo e o sentimento de pertença dos alunos. A biblioteca, antes subutilizada, passou a ser um dos ambientes mais frequentados e vibrantes da escola.",
         "Voz_Bolsista": "Permitiu aos bolsistas de Letras e Pedagogia desenvolver estratégias de incentivo afetivas e personalizadas, aproximando os estudantes do prazer literário por meio do lúdico.",
         "Dificuldades": "A necessidade de conciliar horários de trabalho de bolsistas e alunos demandou flexibilização e reagendamentos constantes da rotina escolar.",
-        "Foto": "https://images.unsplash.com/photo-1506880018603-83d5b814b5a6?w=600"
+        "Foto": "https://drive.google.com/open?id=19dYUF5kAD0950iinqr5rulDvwIIHfRyc"
     },
     {
         "Escola": "CEJA de Tubarão", 
@@ -158,7 +159,7 @@ EMBEDDED_NARRATIVAS = [
         "Impacto_Escola": "Aproximação de adultos da EJA (muitos em processo de alfabetização) do universo da literatura crítica, fomentando a autoconfiança de ler e escrever.",
         "Voz_Bolsista": "As pibidianas exercitaram o diálogo constante e a escuta atenta, adaptando propostas às heterogeneidades dos estudantes com níveis de escrita variados.",
         "Dificuldades": "O cansaço dos estudantes da EJA após longas jornadas de trabalho e o elevado índice de faltas por imprevistos de saúde exigiram sensibilidade pedagógica.",
-        "Foto": "https://images.unsplash.com/photo-1457369804613-52c61a468e7d?w=600"
+        "Foto": "https://drive.google.com/open?id=13zXCE4b419p9Ol89qUXOBMvbVlBs4t4k"
     },
     {
         "Escola": "EEB Henrique Fontes", 
@@ -169,7 +170,7 @@ EMBEDDED_NARRATIVAS = [
         "Impacto_Escola": "Os alunos ganharam um canal seguro para relatar abusos. Os casos foram avaliados conjuntamente pela orientadora pedagógica e bolsistas do PIBID para encaminhamento seguro.",
         "Voz_Bolsista": "Os licenciandos desenvolveram competências socioemocionais fundamentais, como empatia, acolhimento humanizado e escuta de realidades complexas e sensíveis.",
         "Dificuldades": "A escassez de salas específicas e recursos tecnológicos adequados para as reuniões do núcleo exigiu criatividade na partilha de espaços comuns.",
-        "Foto": "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=600"
+        "Foto": "https://drive.google.com/open?id=1ZjFwf2SeADmQ8QW9nGilNe6ylecoQmke"
     },
     {
         "Escola": "EEB Senador Francisco Benjamin Gallotti", 
@@ -180,7 +181,7 @@ EMBEDDED_NARRATIVAS = [
         "Impacto_Escola": "A biblioteca ganhou vida nova. A integração perfeita entre literatura, expressão artística e recursos maker atraiu os jovens para a leitura interpretativa ativa.",
         "Voz_Bolsista": "As bolsistas de iniciação consolidaram sua identidade docente ao mediar trabalhos coletivos práticos, conectando a teoria interpretativa com a prática manual dos estudantes.",
         "Dificuldades": "O acervo físico do livro na biblioteca era muito restrito, demandando compartilhamento em duplas e digitalização de capítulos.",
-        "Foto": "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=600"
+        "Foto": "https://drive.google.com/open?id=1oJxomWUxnFyoOhUe0dgmQXxn4517bXTu"
     }
 ]
 
@@ -303,12 +304,14 @@ def load_data(gsheets_url=None):
 # -------------------------------------------------------------
 # SIDEBAR - BRANDING & CONNECTIONS
 # -------------------------------------------------------------
-# Branding Logos (UNISUL and Anima Group styling)
-col_l1, col_l2 = st.sidebar.columns(2)
-with col_l1:
-    st.image("https://multimodal.usercontent.google.com/download?c=Cgpub3RlYm9va2xtEkASCWFydGlmYWN0cxozCiRhZmI3N2NhZC01MWFhLTQzZTMtOGYzNS04YTI3ZDBmZDAyMzQSCxIHEMvXv_XnDBgB&filename=pibid_dados_modelo.xlsx&opi=96797242", width=120, caption="PIBID / UNISUL")
-with col_l2:
-    st.image("https://multimodal.usercontent.google.com/download?c=Cgpub3RlYm9va2xtEkASCWFydGlmYWN0cxozCiRhZmI3N2NhZC01MWFhLTQzZTMtOGYzNS04YTI3ZDBmZDAyMzQSCxIHEMvXv_XnDBgB&filename=pibid_dados_modelo.xlsx&opi=96797242", width=100, caption="ÂNIMA")
+# Branding Logos (UNISUL and Anima Group styling - Elegant Corporate Badge)
+st.sidebar.markdown("""
+<div style='background-color:#1F497D; color:white; padding:15px; border-radius:8px; text-align:center; font-family:"Calibri",sans-serif; margin-bottom:15px;'>
+    <h3 style='margin:0; font-size:1.3rem; font-weight:bold; letter-spacing:1px;'>PIBID UNISUL</h3>
+    <div style='border-top:1px solid #DCE6F1; margin:8px 0;'></div>
+    <p style='margin:0; font-size:0.8rem; color:#DCE6F1; font-weight:bold; text-transform:uppercase;'>GRUPO ÂNIMA EDUCAÇÃO</p>
+</div>
+""", unsafe_allow_html=True)
 
 st.sidebar.title("🔗 Conexão Google Sheets")
 gs_url = st.sidebar.text_input(
@@ -395,7 +398,14 @@ with tab_narr:
                     st.markdown("<p class='section-title'>📸 Registro Visual do Núcleo</p>", unsafe_allow_html=True)
                     foto_url = row.get("Foto", "")
                     if isinstance(foto_url, str) and foto_url.strip():
-                        st.image(foto_url, use_container_width=True, caption=f"Ilustração/Foto: {row['Projeto_Acao']}")
+                        ptype, conv_url = get_direct_img_url(foto_url)
+                        if ptype == "image":
+                            st.image(conv_url, use_container_width=True, caption=f"Foto: {row['Projeto_Acao']}")
+                        elif ptype == "folder":
+                            st.warning("Esta narrativa está associada a uma pasta do Google Drive.")
+                            st.link_button("Abrir Pasta de Fotos 🌐", conv_url)
+                        else:
+                            st.image(foto_url, use_container_width=True, caption=f"Foto: {row['Projeto_Acao']}")
                     else:
                         st.info("Nenhuma foto anexada a este relato qualitativo.")
                         
@@ -449,18 +459,7 @@ with tab_photos:
                 else:
                     st.info("Nenhum arquivo de imagem anexado nesta resposta de formulário.")
                 
-                st.divider()
-                
-                # Evaluation and Frequency sheets
-                col_doc1, col_col2 = st.columns(2)
-                with col_doc1:
-                    ficha_av = row.get("Ficha_Avaliacao", "")
-                    if isinstance(ficha_av, str) and ficha_av.strip():
-                        st.link_button("📄 Acessar Ficha de Avaliação dos IDs", ficha_av)
-                with col_col2:
-                    ficha_freq = row.get("Ficha_Frequencia", "")
-                    if isinstance(ficha_freq, str) and ficha_freq.strip():
-                        st.link_button("📝 Acessar Ficha de Frequência dos IDs", ficha_freq)
+
 
 # -------------------------------------------------------------
 # TAB 3: THEORETICAL AND REFLECTIVE DIMENSIONS
