@@ -150,6 +150,43 @@ def process_links(links_str):
             processed.append({"type": ptype, "url": conv, "file_name": fname, "orig": p})
     return processed
 
+def identify_supervisor_and_school(row):
+    email = str(row.get("Email", "")).lower().strip()
+    sup = str(row.get("Supervisor", "")).lower().strip()
+    
+    # 1. Map by Email first (Most robust, filled out automatically)
+    if "orianoadriano" in email or "adriano" in email:
+        return "Adriano da Silva Oriano Junior", "EEM Almirante Lamego"
+    elif "lucaszampa" in email or "zampa" in email:
+        return "Lucas Zamparetti Oliveira", "EEB Henrique Fontes"
+    elif "douglas" in email:
+        return "Douglas Bardini Silveira", "EEB Henrique Fontes"
+    elif "elisa" in email:
+        return "Elisa Vieira da Silva Soares", "EEB João Teixeira Nunes"
+    elif "fabirevert" in email or "fabiola" in email:
+        return "Fabíola Medeiros Savi", "CEJA de Tubarão"
+    elif "luciana" in email or "345429" in email:
+        return "Luciana Fernandes", "EEB Senador Francisco Benjamin Gallotti"
+        
+    # 2. Map by Name if Email is empty or not matching
+    if "adriano" in sup:
+        return "Adriano da Silva Oriano Junior", "EEM Almirante Lamego"
+    elif "lucas" in sup:
+        return "Lucas Zamparetti Oliveira", "EEB Henrique Fontes"
+    elif "douglas" in sup:
+        return "Douglas Bardini Silveira", "EEB Henrique Fontes"
+    elif "elisa" in sup:
+        return "Elisa Vieira da Silva Soares", "EEB João Teixeira Nunes"
+    elif "marileia" in sup or "mariléia" in sup:
+        return "Mariléia Zélia Teixeira", "EEB João Teixeira Nunes"
+    elif "fabiola" in sup or "fabíola" in sup:
+        return "Fabíola Medeiros Savi", "CEJA de Tubarão"
+    elif "luciana" in sup:
+        return "Luciana Fernandes", "EEB Senador Francisco Benjamin Gallotti"
+        
+    return "Outros / Não Identificado", "Outros / Não Identificado"
+
+
 def render_image_carousel(images_list, interval_ms=4000, height=350):
     """
     Renders an auto-playing pure HTML/CSS/JS image carousel inside Streamlit.
@@ -664,35 +701,21 @@ with tab_narr:
                 with col_visual:
                     st.markdown("<p class='section-title'>📸 Registro Visual do Núcleo</p>", unsafe_allow_html=True)
                     
-                    # 1. Busca dinâmica de fotos reais nas respostas do formulário (df_visitas) baseando-se no Supervisor
+                    # 1. Busca dinâmica de fotos reais nas respostas do formulário (df_visitas) baseando-se no Supervisor (robust email and name check)
                     sup_narrative = row.get("Supervisor", "")
                     
-                    # Filtra as visitas registradas por esse supervisor específico
-                    visitas_do_nucleo = df_visitas[
-                        df_visitas["Supervisor"].str.lower().str.strip() == sup_narrative.lower().strip()
-                    ] if not df_visitas.empty else pd.DataFrame()
-                    
-                    # Se não achar por correspondência exata de nome, tenta uma busca parcial inteligente
-                    if visitas_do_nucleo.empty and not df_visitas.empty and sup_narrative:
-                        primeiro_nome = sup_narrative.split()[0].lower()
-                        visitas_do_nucleo = df_visitas[
-                            df_visitas["Supervisor"].str.lower().str.contains(primeiro_nome, na=False)
-                        ]
-                    
                     fotos_reais = []
-                    if not visitas_do_nucleo.empty:
-                        # Ordena para colocar os registros mais recentes primeiro usando a coluna Carimbo de envio
-                        visitas_do_nucleo = visitas_do_nucleo.copy()
-                        if "Carimbo" in visitas_do_nucleo.columns:
-                            try:
-                                visitas_do_nucleo["Carimbo_dt"] = pd.to_datetime(visitas_do_nucleo["Carimbo"], format="%d/%m/%Y %H:%M:%S", errors="coerce")
-                                visitas_do_nucleo = visitas_do_nucleo.sort_values(by="Carimbo_dt", ascending=False)
-                            except:
-                                pass
-                        
-                        # Compila as fotos reais enviadas
-                        for _, v_row in visitas_do_nucleo.iterrows():
-                            v_photos = v_row.get("Fotos", "")
+                    if not df_visitas.empty and sup_narrative:
+                        # Filter rows in df_visitas that map to this supervisor
+                        matching_rows = []
+                        for _, v_row in df_visitas.iterrows():
+                            identified_sup, _ = identify_supervisor_and_school(v_row)
+                            if identified_sup.lower().strip() == sup_narrative.lower().strip():
+                                matching_rows.append(v_row)
+                                
+                        # Compile all photos from these matching rows
+                        for m_row in matching_rows:
+                            v_photos = m_row.get("Fotos", "")
                             processed_v = process_links(v_photos)
                             fotos_reais.extend([p for p in processed_v if p["type"] == "image"])
                     
