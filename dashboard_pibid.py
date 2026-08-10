@@ -126,6 +126,159 @@ def process_links(links_str):
             processed.append({"type": ptype, "url": conv, "orig": p})
     return processed
 
+def render_image_carousel(images_list, interval_ms=4000, height=350):
+    """
+    Renders an auto-playing pure HTML/CSS/JS image carousel inside Streamlit.
+    images_list: List of dicts with {"url": "...", "orig": "..."}
+    """
+    import json
+    urls = [img["url"] for img in images_list]
+    js_images = json.dumps(urls)
+    
+    html_code = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <style>
+        body {{
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Calibri', 'Arial', sans-serif;
+            background-color: transparent;
+        }}
+        .carousel-container {{
+            width: 100%;
+            height: {height}px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 8px;
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.15);
+            border: 1px solid #DCE6F1;
+        }}
+        .slide {{
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            opacity: 0;
+            transition: opacity 1.0s ease-in-out;
+            z-index: 1;
+        }}
+        .slide.active {{
+            opacity: 1;
+            z-index: 2;
+        }}
+        .slide img {{
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }}
+        .caption-bar {{
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(31, 73, 125, 0.85); /* Corporate Blue with opacity */
+            color: white;
+            padding: 10px 15px;
+            font-size: 0.9rem;
+            text-align: center;
+            z-index: 3;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }}
+        .dots {{
+            position: absolute;
+            bottom: 45px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 4;
+        }}
+        .dot {{
+            width: 10px;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.3s;
+        }}
+        .dot.active {{
+            background: #E2EFDA; /* Soft green active indicator */
+            transform: scale(1.2);
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }}
+        .dot:hover {{
+            background: white;
+        }}
+    </style>
+    </head>
+    <body>
+    <div class="carousel-container">
+        <div id="slides-wrapper"></div>
+        <div class="dots" id="dots-wrapper"></div>
+        <div class="caption-bar" id="caption-el"></div>
+    </div>
+
+    <script>
+        const urls = {js_images};
+        const interval = {interval_ms};
+        
+        const slidesWrapper = document.getElementById('slides-wrapper');
+        const dotsWrapper = document.getElementById('dots-wrapper');
+        const captionEl = document.getElementById('caption-el');
+        
+        // Generate Slides and Dots
+        urls.forEach((url, index) => {{
+            const slide = document.createElement('div');
+            slide.className = 'slide' + (index === 0 ? ' active' : '');
+            slide.innerHTML = `<img src="${{url}}" alt="Slide ${{index + 1}}">`;
+            slidesWrapper.appendChild(slide);
+            
+            const dot = document.createElement('div');
+            dot.className = 'dot' + (index === 0 ? ' active' : '');
+            dot.addEventListener('click', () => showSlide(index));
+            dotsWrapper.appendChild(dot);
+        }});
+        
+        captionEl.innerText = `Foto ${{1}} de ${{urls.length}}`;
+        
+        let currentIndex = 0;
+        let slideInterval = setInterval(nextSlide, interval);
+        
+        function showSlide(index) {{
+            clearInterval(slideInterval);
+            const slides = document.querySelectorAll('.slide');
+            const dots = document.querySelectorAll('.dot');
+            
+            slides[currentIndex].classList.remove('active');
+            dots[currentIndex].classList.remove('active');
+            
+            currentIndex = index;
+            
+            slides[currentIndex].classList.add('active');
+            dots[currentIndex].classList.add('active');
+            captionEl.innerText = `Foto ${{currentIndex + 1}} de ${{urls.length}}`;
+            
+            slideInterval = setInterval(nextSlide, interval);
+        }}
+        
+        function nextSlide() {{
+            const nextIndex = (currentIndex + 1) % urls.length;
+            showSlide(nextIndex);
+        }}
+    </script>
+    </body>
+    </html>
+    """
+    import streamlit.components.v1 as components
+    components.html(html_code, height=height + 10)
+
+
 # -------------------------------------------------------------
 # EMBEDDED BACKUP DATA (PIBID qualitative narratives - Academically Dense & Complete)
 # -------------------------------------------------------------
@@ -482,18 +635,66 @@ with tab_narr:
                 
                 with col_visual:
                     st.markdown("<p class='section-title'>📸 Registro Visual do Núcleo</p>", unsafe_allow_html=True)
-                    foto_url = row.get("Foto", "")
-                    if isinstance(foto_url, str) and foto_url.strip():
-                        ptype, conv_url = get_direct_img_url(foto_url)
-                        if ptype == "image":
-                            st.image(conv_url, use_container_width=True, caption=f"Foto: {row['Projeto_Acao']}")
-                        elif ptype == "folder":
-                            st.warning("Esta narrativa está associada a uma pasta do Google Drive.")
-                            st.link_button("Abrir Pasta de Fotos 🌐", conv_url)
+                    
+                    # 1. Busca dinâmica de fotos reais nas respostas do formulário (df_visitas) baseando-se no Supervisor
+                    sup_narrative = row.get("Supervisor", "")
+                    
+                    # Filtra as visitas registradas por esse supervisor específico
+                    visitas_do_nucleo = df_visitas[
+                        df_visitas["Supervisor"].str.lower().str.strip() == sup_narrative.lower().strip()
+                    ] if not df_visitas.empty else pd.DataFrame()
+                    
+                    # Se não achar por correspondência exata de nome, tenta uma busca parcial inteligente
+                    if visitas_do_nucleo.empty and not df_visitas.empty and sup_narrative:
+                        primeiro_nome = sup_narrative.split()[0].lower()
+                        visitas_do_nucleo = df_visitas[
+                            df_visitas["Supervisor"].str.lower().str.contains(primeiro_nome, na=False)
+                        ]
+                    
+                    fotos_reais = []
+                    if not visitas_do_nucleo.empty:
+                        # Ordena para colocar os registros mais recentes primeiro usando a coluna Carimbo de envio
+                        visitas_do_nucleo = visitas_do_nucleo.copy()
+                        if "Carimbo" in visitas_do_nucleo.columns:
+                            try:
+                                visitas_do_nucleo["Carimbo_dt"] = pd.to_datetime(visitas_do_nucleo["Carimbo"], format="%d/%m/%Y %H:%M:%S", errors="coerce")
+                                visitas_do_nucleo = visitas_do_nucleo.sort_values(by="Carimbo_dt", ascending=False)
+                            except:
+                                pass
+                        
+                        # Compila as fotos reais enviadas
+                        for _, v_row in visitas_do_nucleo.iterrows():
+                            v_photos = v_row.get("Fotos", "")
+                            processed_v = process_links(v_photos)
+                            fotos_reais.extend([p for p in processed_v if p["type"] == "image"])
+                    
+                    # Exibe as fotos vinculadas dinamicamente via Carrossel ou Imagem Estática
+                    if fotos_reais:
+                        if len(fotos_reais) == 1:
+                            st.markdown(f"✨ *Foto real encontrada no formulário:*")
+                            st.image(fotos_reais[0]["url"], use_container_width=True, caption=f"Registro de Visita - Supervisor(a) {sup_narrative}")
                         else:
-                            st.image(foto_url, use_container_width=True, caption=f"Foto: {row['Projeto_Acao']}")
+                            st.markdown(f"✨ *Carrossel de Slides: **{len(fotos_reais)} fotos** reais registradas em visitas (transição automática de 4s):*")
+                            render_image_carousel(fotos_reais, interval_ms=4000, height=380)
                     else:
-                        st.info("Nenhuma foto anexada a este relato qualitativo.")
+                        # Fallback: Se não houver fotos de visitas, usa os links da planilha Narrativas (podem ser múltiplos!)
+                        foto_url = row.get("Foto", "")
+                        processed_fallback = process_links(foto_url) if isinstance(foto_url, str) and foto_url.strip() else []
+                        
+                        fallback_images = [p for p in processed_fallback if p["type"] == "image"]
+                        fallback_folders = [p for p in processed_fallback if p["type"] == "folder"]
+                        
+                        if fallback_images:
+                            if len(fallback_images) == 1:
+                                st.image(fallback_images[0]["url"], use_container_width=True, caption=f"Foto: {row['Projeto_Acao']}")
+                            else:
+                                st.markdown(f"✨ *Carrossel de Slides do Portfólio ({len(fallback_images)} fotos - transição automática de 4s):*")
+                                render_image_carousel(fallback_images, interval_ms=4000, height=380)
+                        elif fallback_folders:
+                            st.warning("Este núcleo possui fotos armazenadas em uma pasta do Google Drive.")
+                            st.link_button("Abrir Pasta de Fotos 🌐", fallback_folders[0]["url"])
+                        else:
+                            st.info("Nenhuma foto cadastrada ou enviada por este núcleo ainda.")
                         
                 st.divider()
 
