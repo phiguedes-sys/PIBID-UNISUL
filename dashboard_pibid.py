@@ -80,7 +80,7 @@ st.markdown("""
         font-weight: bold;
     }
 </style>
-""", unsafe_html=True)
+""", unsafe_allow_html=True)
 
 # -------------------------------------------------------------
 # EMBEDDED BACKUP DATA (Used if no file or Google Sheet is linked)
@@ -268,8 +268,8 @@ if selected_supervisor != "Todos":
 # -------------------------------------------------------------
 col_logo, col_title = st.columns([1, 8])
 with col_title:
-    st.markdown('<p class="main-title">PORTAL INTERATIVO PIBID UNISUL</p>', unsafe_html=True)
-    st.markdown('<p class="subtitle">Análise Consolidada de Relatórios Bimestrais de Atividades (EEM Almirante Lamego e Escolas Parceiras) • 2024 - 2026</p>', unsafe_html=True)
+    st.markdown('<p class="main-title">PORTAL INTERATIVO PIBID UNISUL</p>', unsafe_allow_html=True)
+    st.markdown('<p class="subtitle">Análise Consolidada de Relatórios Bimestrais de Atividades (EEM Almirante Lamego e Escolas Parceiras) • 2024 - 2026</p>', unsafe_allow_html=True)
 
 # -------------------------------------------------------------
 # TABBED INTERFACE
@@ -293,28 +293,28 @@ with tab_overview:
             <div class="kpi-label">Escolas Parceiras</div>
             <div class="kpi-value">{len(df_filtered_escolas)}</div>
         </div>
-        """, unsafe_html=True)
+        """, unsafe_allow_html=True)
     with col_kpi2:
         st.markdown(f"""
         <div class="kpi-card">
             <div class="kpi-label">Supervisores Ativos</div>
             <div class="kpi-value">{len(df_filtered_escolas["Supervisor"].unique())}</div>
         </div>
-        """, unsafe_html=True)
+        """, unsafe_allow_html=True)
     with col_kpi3:
         st.markdown(f"""
         <div class="kpi-card">
             <div class="kpi-label">Bolsistas (IDs) Ativos</div>
             <div class="kpi-value">{df_filtered_escolas["Bolsistas_Ativos"].sum()}</div>
         </div>
-        """, unsafe_html=True)
+        """, unsafe_allow_html=True)
     with col_kpi4:
         st.markdown(f"""
         <div class="kpi-card">
             <div class="kpi-label">Ações Registradas</div>
             <div class="kpi-value">{len(df_filtered_acoes)}</div>
         </div>
-        """, unsafe_html=True)
+        """, unsafe_allow_html=True)
 
     st.markdown("### 📈 Estatísticas & Evolução Temporal")
     
@@ -405,7 +405,7 @@ with tab_nucleos:
             <span class="badge-escola">Ativo</span>
             <span class="badge-supervisor">Bolsistas de Iniciação: {row['Bolsistas_Ativos']}</span>
         </div>
-        """, unsafe_html=True)
+        """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------
 # TAB 4: PROJETOS ESPECIAIS & BUSCA
@@ -442,7 +442,7 @@ with tab_search:
                     <p><b>Impactos:</b> {row['Impactos_na_Escola']}</p>
                     <p><b>Dificuldades:</b> {row['Dificuldades_Enfrentadas']}</p>
                 </div>
-                """, unsafe_html=True)
+                """, unsafe_allow_html=True)
         else:
             st.info("Nenhuma atividade encontrada com o termo buscado. Tente outra palavra-chave!")
     else:
