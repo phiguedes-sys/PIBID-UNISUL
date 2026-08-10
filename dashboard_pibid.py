@@ -358,7 +358,7 @@ EMBEDDED_NARRATIVAS = [
         "Impacto_Escola": "Impacto notável no desenvolvimento do raciocínio lógico-matemático, da concentração, do foco e da capacidade de tomada de decisão estratégica dos alunos regidos. No âmbito social e inclusivo, o projeto consolidou o espaço do AEE como polo acolhedor, integrando de forma harmônica e igualitária alunos com deficiências e transtornos em atividades socioeducativas cooperativas, estimulando a resiliência pedagógica.",
         "Voz_Bolsista": "Os bolsistas de Educação Física e Ciências Biológicas relatam que o ensino do xadrez exigiu planejamento estratégico e didática apurada para explicar regras abstratas de forma simples e inclusiva. Vivenciaram na prática os princípios de uma educação humanizada e adaptada à diversidade de ritmos individuais de aprendizagem na sala de aula do AEE.",
         "Dificuldades": "As alterações na matriz de horários da escola e a incompatibilidade inicial de agendas dos bolsistas com o AEE no final de 2025, o que demandou reuniões de alinhamento com a equipe gestora para a reformulação teórica e reativação plena e bem-sucedida do projeto em 2026.",
-        "Foto": "https://drive.google.com/open?id=1ZjFwf2SeADmQ8QW9nGilNe6ylecoQmke"
+        "Foto": "https://drive.google.com/open?id=1DQIYH7c3FMhDFYyRlfffzgaY3NvQGzcC"
     },
     {
         "Escola": "EEB Senador Francisco Benjamin Gallotti", 
@@ -379,45 +379,49 @@ EMBEDDED_FORM_VISITAS = [
         "Email": "orianoadriano@gmail.com",
         "Supervisor": "Adriano da Silva Oriano Junior",
         "Data_Visita": "24/02/2025",
-        "Ficha_Avaliacao": "https://drive.google.com/open?id=10Eg8aXaaXIvxqH1dS9LisgiSS4B3CL2b",
-        "Fotos": "https://drive.google.com/open?id=1RM3AUkqIsJKyG4KuyxG8-ExAX8KBln1R, https://drive.google.com/open?id=11bNrw28LSgYdz4T5-KLkDIPez2Ex9qv_",
-        "Ficha_Frequencia": "https://drive.google.com/open?id=1G-vBPdS3Q2JIyDcZt3yc59UD8maECLvm"
+        "Fotos": "https://drive.google.com/open?id=1RM3AUkqIsJKyG4KuyxG8-ExAX8KBln1R, https://drive.google.com/open?id=11bNrw28LSgYdz4T5-KLkDIPez2Ex9qv_"
     },
     {
         "Carimbo": "22/04/2025 22:18:08",
         "Email": "orianoadriano@gmail.com",
         "Supervisor": "Adriano da Silva Oriano Junior",
         "Data_Visita": "17/04/2025",
-        "Ficha_Avaliacao": "https://drive.google.com/open?id=1ZKZ-HSp_gYkL0SMcrIALEzaK3_Ptu5_U",
-        "Fotos": "https://drive.google.com/open?id=1iRQ9L99AKJmSSwfCutoK0oxPgBmzxv6h, https://drive.google.com/open?id=1FOFdEcZYZiGPGZaxJE-J5GSsspoE61h5",
-        "Ficha_Frequencia": "https://drive.google.com/open?id=1e2MbDF3-wKb-aT15klV2GnTapZgbIik7"
+        "Fotos": "https://drive.google.com/open?id=1iRQ9L99AKJmSSwfCutoK0oxPgBmzxv6h, https://drive.google.com/open?id=1FOFdEcZYZiGPGZaxJE-J5GSsspoE61h5, https://drive.google.com/open?id=1zw_r8WJ4TvbVU2DrdIlrqzv9cRz71pRm, https://drive.google.com/open?id=19qqygu0GoY4blnJcBuh97zozBq-6LdKo, https://drive.google.com/open?id=1V0Oc75y4XOTbjAOAG5-jvg-CYd1CmrLd"
+    },
+    {
+        "Carimbo": "28/02/2025 14:43:28",
+        "Email": "lucaszampa@hotmail.com",
+        "Supervisor": "Lucas Zamparetti Oliveira",
+        "Data_Visita": "27/02/2025",
+        "Fotos": "https://drive.google.com/open?id=1DQIYH7c3FMhDFYyRlfffzgaY3NvQGzcC, https://drive.google.com/open?id=1ltDHSZa9Vh-b07l8L6u4945E6uJr9KRP, https://drive.google.com/open?id=1E6iJSBFkGARUF0L-m311ekeuSxgowPiW, https://drive.google.com/open?id=12uxfu9KxBg2ej9aNU901BMiqhN_T2Gnf, https://drive.google.com/open?id=1EvHQgGdd0gdANWT98wIg1J28SRI4kQpS"
+    },
+    {
+        "Carimbo": "23/02/2025 00:01:26",
+        "Email": "lucianafernandes@gmail.com",
+        "Supervisor": "Luciana Fernandes",
+        "Data_Visita": "25/02/2025",
+        "Fotos": "https://drive.google.com/open?id=1oJxomWUxnFyoOhUe0dgmQXxn4517bXTu, https://drive.google.com/open?id=1AoiFjOhROn45Rcb6GMut8bIj0BD7Le4r, https://drive.google.com/open?id=15Dio2hZrI7gWtKZdkE_kggnbP9u1QDRd, https://drive.google.com/open?id=1CSqNhzJE_nmXFG0c07OZLELr-eWFx-35, https://drive.google.com/open?id=194jGlfxKnzYeSvp2CWN8ehpd95LkgjQy"
     },
     {
         "Carimbo": "26/05/2025 08:30:48",
         "Email": "elisavieiradasilvasoares@gmail.com",
         "Supervisor": "Elisa Vieira da Silva Soares",
         "Data_Visita": "23/04/2025",
-        "Ficha_Avaliacao": "https://drive.google.com/open?id=1s1LQnJ_OVkiHa_jl8ShQa14VZcooA5Oc",
-        "Fotos": "https://drive.google.com/open?id=19dYUF5kAD0950iinqr5rulDvwIIHfRyc, https://drive.google.com/open?id=1C72WpqlmGpYiDslS9wMCKqLtNORM2njb",
-        "Ficha_Frequencia": "https://drive.google.com/open?id=1NYXLywuxLzmzt-ffdE939IVi8CgokEbe"
+        "Fotos": "https://drive.google.com/open?id=19dYUF5kAD0950iinqr5rulDvwIIHfRyc, https://drive.google.com/open?id=1C72WpqlmGpYiDslS9wMCKqLtNORM2njb, https://drive.google.com/open?id=1rBVObCfSfHsdN3FnacbgvX1CDgQ6AXu3, https://drive.google.com/open?id=1rYPxIAk3o-lNWCploLXsGjbzqJyNcVYz"
     },
     {
         "Carimbo": "04/08/2025 15:42:00",
         "Email": "fabirevert@gmail.com",
         "Supervisor": "Fabíola Medeiros Savi",
         "Data_Visita": "25/06/2025",
-        "Ficha_Avaliacao": "https://drive.google.com/open?id=1eNrNPvVdnzSTeg-GrNsp7wib9OMks6tH",
-        "Fotos": "https://drive.google.com/open?id=13zXCE4b419p9Ol89qUXOBMvbVlBs4t4k, https://drive.google.com/open?id=1aq0WuGWaZiGsBqLD5lwl-1Ps1MXDJx8y",
-        "Ficha_Frequencia": "https://drive.google.com/open?id=1j0o3BluBrxr-8rtLQCHIJUxVTqhS_Gyk"
+        "Fotos": "https://drive.google.com/open?id=13zXCE4b419p9Ol89qUXOBMvbVlBs4t4k, https://drive.google.com/open?id=1aq0WuGWaZiGsBqLD5lwl-1Ps1MXDJx8y, https://drive.google.com/open?id=1apedv_mkHqti_wM04GxAUIsRWZfnjKgt"
     },
     {
-        "Carimbo": "22/04/2026 16:11:04",
-        "Email": "lucaszampa@hotmail.com",
-        "Supervisor": "Lucas Zamparetti Oliveira",
-        "Data_Visita": "19/02/2026",
-        "Ficha_Avaliacao": "https://drive.google.com/open?id=1X-pgdG3x3PXl964VLku5SPjpdMKjuzMk",
-        "Fotos": "https://drive.google.com/open?id=1ZjFwf2SeADmQ8QW9nGilNe6ylecoQmke, https://drive.google.com/open?id=1xsPNKDgAGxGR7AAAlcmlZyX8iYqW3VWB",
-        "Ficha_Frequencia": "https://drive.google.com/open?id=1epLQAQRa_dv1S1U75vSM1DuxZmx55FsT"
+        "Carimbo": "01/04/2025 09:42:49",
+        "Email": "douglasbardini@gmail.com",
+        "Supervisor": "Douglas Bardini Silveira",
+        "Data_Visita": "06/03/2025",
+        "Fotos": "https://drive.google.com/open?id=17GR6mah4x2f-cnfVfSxe6e34whG9P-kl, https://drive.google.com/open?id=15nl7qU7XOsW6Hu1TrGXdNsltrfAPISBc"
     }
 ]
 
@@ -671,10 +675,10 @@ with tab_narr:
                     # Exibe as fotos vinculadas dinamicamente via Carrossel ou Imagem Estática
                     if fotos_reais:
                         if len(fotos_reais) == 1:
-                            st.markdown(f"✨ *Foto real encontrada no formulário:*")
+                            pass
                             st.image(fotos_reais[0]["url"], use_container_width=True, caption=f"Registro de Visita - Supervisor(a) {sup_narrative}")
                         else:
-                            st.markdown(f"✨ *Carrossel de Slides: **{len(fotos_reais)} fotos** reais registradas em visitas (transição automática de 4s):*")
+                            pass
                             render_image_carousel(fotos_reais, interval_ms=4000, height=380)
                     else:
                         # Fallback: Se não houver fotos de visitas, usa os links da planilha Narrativas (podem ser múltiplos!)
@@ -688,7 +692,7 @@ with tab_narr:
                             if len(fallback_images) == 1:
                                 st.image(fallback_images[0]["url"], use_container_width=True, caption=f"Foto: {row['Projeto_Acao']}")
                             else:
-                                st.markdown(f"✨ *Carrossel de Slides do Portfólio ({len(fallback_images)} fotos - transição automática de 4s):*")
+                                pass
                                 render_image_carousel(fallback_images, interval_ms=4000, height=380)
                         elif fallback_folders:
                             st.warning("Este núcleo possui fotos armazenadas em uma pasta do Google Drive.")
