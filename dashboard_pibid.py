@@ -6,13 +6,13 @@ import re
 
 # Set page config
 st.set_page_config(
-    page_title="PIBID - Portal Interativo de Ações",
+    page_title="PIBID UNISUL - Portal de Vivências Qualitativas",
     page_icon="🏫",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Custom Styling (Corporate Blue Theme)
+# Custom Styling (Corporate Blue and elegant qualitative theme)
 st.markdown("""
 <style>
     .main-title {
@@ -28,422 +28,518 @@ st.markdown("""
         font-size: 1.1rem;
         margin-bottom: 2rem;
     }
-    .kpi-card {
-        background-color: #F2F4F8;
+    .qualitative-card {
+        background-color: #F8F9FA;
+        border-left: 5px solid #1F497D;
         border-radius: 8px;
         padding: 1.5rem;
-        border-left: 5px solid #1F497D;
-        box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
+        margin-bottom: 1.5rem;
+        box-shadow: 1px 1px 5px rgba(0,0,0,0.05);
     }
-    .kpi-value {
-        font-size: 2.2rem;
+    .card-header {
+        font-size: 1.3rem;
         font-weight: bold;
         color: #1F497D;
-    }
-    .kpi-label {
-        font-size: 0.9rem;
-        color: #595959;
-        font-weight: bold;
-        text-transform: uppercase;
-    }
-    .project-card {
-        background-color: #FFFFFF;
-        border: 1px solid #DCE6F1;
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        border-top: 4px solid #1F497D;
-        box-shadow: 1px 1px 3px rgba(0,0,0,0.02);
+        margin-bottom: 0.5rem;
     }
     .badge-escola {
         background-color: #DCE6F1;
         color: #1F497D;
-        padding: 0.2rem 0.6rem;
+        padding: 0.25rem 0.6rem;
         border-radius: 12px;
         font-size: 0.8rem;
         font-weight: bold;
+        margin-right: 0.5rem;
     }
     .badge-supervisor {
         background-color: #E2EFDA;
         color: #375623;
-        padding: 0.2rem 0.6rem;
+        padding: 0.25rem 0.6rem;
         border-radius: 12px;
         font-size: 0.8rem;
         font-weight: bold;
+        margin-right: 0.5rem;
     }
     .badge-periodo {
         background-color: #FFF2CC;
         color: #7F6000;
-        padding: 0.2rem 0.6rem;
+        padding: 0.25rem 0.6rem;
         border-radius: 12px;
         font-size: 0.8rem;
         font-weight: bold;
+    }
+    .section-title {
+        color: #1F497D;
+        border-bottom: 2px solid #DCE6F1;
+        padding-bottom: 0.3rem;
+        margin-top: 1.5rem;
+        margin-bottom: 0.8rem;
+        font-weight: bold;
+    }
+    .text-content {
+        font-size: 0.95rem;
+        line-height: 1.5;
+        color: #333333;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# EMBEDDED BACKUP DATA (Used if no file or Google Sheet is linked)
+# IMAGE CONVERSION UTILITIES
 # -------------------------------------------------------------
-EMBEDDED_ESCOLAS = [
-    {"ID_Escola": 1, "Nome_Escola": "EEM Almirante Lamego", "Sigla": "EEMAL", "Supervisor": "Adriano da Silva Oriano Junior", "Email_Supervisor": "a.juninhoo@hotmail.com", "Telefone_Supervisor": "(48) 99844-7589", "Subprojetos": "Educação Física, Letras, Pedagogia", "Bolsistas_Ativos": 8},
-    {"ID_Escola": 2, "Nome_Escola": "EEB João Teixeira Nunes", "Sigla": "EEBJTN", "Supervisor": "Elisa Vieira da Silva Soares", "Email_Supervisor": "elisaartel@gmail.com", "Telefone_Supervisor": "(48) 99606-9837", "Subprojetos": "Pedagogia, Letras, Matemática", "Bolsistas_Ativos": 5},
-    {"ID_Escola": 3, "Nome_Escola": "CEJA de Tubarão", "Sigla": "CEJA", "Supervisor": "Fabíola Medeiros Savi", "Email_Supervisor": "fabirevert@gmail.com", "Telefone_Supervisor": "(48) 99637-2913", "Subprojetos": "Leitura Literária (EJA)", "Bolsistas_Ativos": 9},
-    {"ID_Escola": 4, "Nome_Escola": "EEB Henrique Fontes", "Sigla": "EEBHF", "Supervisor": "Lucas Zamparetti Oliveira", "Email_Supervisor": "lucaszampa@hotmail.com", "Telefone_Supervisor": "(48) 98405-7412", "Subprojetos": "NEPRE, Xadrez na Escola", "Bolsistas_Ativos": 7},
-    {"ID_Escola": 5, "Nome_Escola": "EEB Senador Francisco Francisco Gallotti", "Sigla": "EEB Gallotti", "Supervisor": "Luciana Fernandes", "Email_Supervisor": "345429@profe.sed.sc.gov.br", "Telefone_Supervisor": "(48) 99901-8159", "Subprojetos": "Projeto de Leitura (Mundo dos Sonhos)", "Bolsistas_Ativos": 7}
+def get_direct_img_url(url):
+    url = url.strip()
+    if not url:
+        return "invalid", ""
+    # Check if folder link
+    if "drive.google.com/drive/folders/" in url or "drive.google.com/drive/u/0/folders/" in url:
+        return "folder", url
+    # Extract file ID from regular shared links
+    match_id = re.search(r"id=([a-zA-Z0-9-_]+)", url)
+    if not match_id:
+        match_id = re.search(r"/file/d/([a-zA-Z0-9-_]+)", url)
+    if match_id:
+        file_id = match_id.group(1)
+        return "image", f"https://docs.google.com/uc?export=download&id={file_id}"
+    # Standard web link
+    if url.startswith("http"):
+        return "image", url
+    return "invalid", url
+
+def process_links(links_str):
+    if not isinstance(links_str, str) or pd.isna(links_str):
+        return []
+    parts = []
+    # Google Sheet lists are usually separated by commas or spaces
+    if "," in links_str:
+        parts = [p.strip() for p in links_str.split(",") if p.strip()]
+    else:
+        parts = [p.strip() for p in links_str.split() if p.strip()]
+    
+    processed = []
+    for p in parts:
+        ptype, conv = get_direct_img_url(p)
+        if ptype != "invalid":
+            processed.append({"type": ptype, "url": conv, "orig": p})
+    return processed
+
+# -------------------------------------------------------------
+# EMBEDDED BACKUP DATA (PIBID qualitative narratives)
+# -------------------------------------------------------------
+EMBEDDED_NARRATIVAS = [
+    {
+        "Escola": "EEM Almirante Lamego", 
+        "Supervisor": "Adriano da Silva Oriano Junior", 
+        "Projeto_Acao": "Recreio Interativo", 
+        "Periodo_Bimestre": "Abril/Maio 2025",
+        "Metodologia": "Intervalos dinamizados no Ensino Fundamental I com brincadeiras cooperativas como pula-corda, queimada e futebol guiadas pelos bolsistas.",
+        "Impacto_Escola": "A assessoria de direção relatou uma redução notável de ruídos e correrias nos corredores e pátios nos dias de ação, transformando o recreio num espaço de respeito mútuo e integração sadia.",
+        "Voz_Bolsista": "Os IDs vivenciaram os primeiros passos práticos da regência, aprendendo a planejar de forma interdisciplinar e articulando teorias de recreação cooperativa diretamente na prática escolar.",
+        "Dificuldades": "O tempo do recreio é muito curto (15 minutos), exigindo agilidade extrema na organização do material para aproveitar cada minuto.",
+        "Foto": "https://images.unsplash.com/photo-1571210862729-78a52d3779a2?w=600"
+    },
+    {
+        "Escola": "EEB João Teixeira Nunes", 
+        "Supervisor": "Elisa Vieira da Silva Soares", 
+        "Projeto_Acao": "Sociedade Secreta Literária", 
+        "Periodo_Bimestre": "Fevereiro/Março 2026",
+        "Metodologia": "Criação de carteirinhas de membro personalizadas e convites oficiais misteriosos para encontros de leitura no Clube do Livro JTN com temática 'Leitura às Cegas'.",
+        "Impacto_Escola": "Estimulou fortemente o protagonismo e o sentimento de pertença dos alunos. A biblioteca, antes subutilizada, passou a ser um dos ambientes mais frequentados e vibrantes da escola.",
+        "Voz_Bolsista": "Permitiu aos bolsistas de Letras e Pedagogia desenvolver estratégias de incentivo afetivas e personalizadas, aproximando os estudantes do prazer literário por meio do lúdico.",
+        "Dificuldades": "A necessidade de conciliar horários de trabalho de bolsistas e alunos demandou flexibilização e reagendamentos constantes da rotina escolar.",
+        "Foto": "https://images.unsplash.com/photo-1506880018603-83d5b814b5a6?w=600"
+    },
+    {
+        "Escola": "CEJA de Tubarão", 
+        "Supervisor": "Fabíola Medeiros Savi", 
+        "Projeto_Acao": "Despertar Literário & Oficinas de Cordel", 
+        "Periodo_Bimestre": "Fevereiro/Março 2026",
+        "Metodologia": "Oficina de cordéis baseada no poema 'Brincadeiras' de Manoel de Barros, com produção de sextilhas e xilogravuras por estudantes do nivelamento.",
+        "Impacto_Escola": "Aproximação de adultos da EJA (muitos em processo de alfabetização) do universo da literatura crítica, fomentando a autoconfiança de ler e escrever.",
+        "Voz_Bolsista": "As pibidianas exercitaram o diálogo constante e a escuta atenta, adaptando propostas às heterogeneidades dos estudantes com níveis de escrita variados.",
+        "Dificuldades": "O cansaço dos estudantes da EJA após longas jornadas de trabalho e o elevado índice de faltas por imprevistos de saúde exigiram sensibilidade pedagógica.",
+        "Foto": "https://images.unsplash.com/photo-1457369804613-52c61a468e7d?w=600"
+    },
+    {
+        "Escola": "EEB Henrique Fontes", 
+        "Supervisor": "Lucas Zamparetti Oliveira", 
+        "Projeto_Acao": "Práticas de Acolhimento NEPRE (Combate ao Bullying)", 
+        "Periodo_Bimestre": "Agosto/Setembro 2025",
+        "Metodologia": "Palestra educativa sobre bullying acompanhada da confecção e distribuição de caixas físicas e QR Codes anônimos para o 'Correio de Denúncias'.",
+        "Impacto_Escola": "Os alunos ganharam um canal seguro para relatar abusos. Os casos foram avaliados conjuntamente pela orientadora pedagógica e bolsistas do PIBID para encaminhamento seguro.",
+        "Voz_Bolsista": "Os licenciandos desenvolveram competências socioemocionais fundamentais, como empatia, acolhimento humanizado e escuta de realidades complexas e sensíveis.",
+        "Dificuldades": "A escassez de salas específicas e recursos tecnológicos adequados para as reuniões do núcleo exigiu criatividade na partilha de espaços comuns.",
+        "Foto": "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=600"
+    },
+    {
+        "Escola": "EEB Senador Francisco Benjamin Gallotti", 
+        "Supervisor": "Luciana Fernandes", 
+        "Projeto_Acao": "Mundo dos Sonhos (Coraline Maker)", 
+        "Periodo_Bimestre": "Junho/Julho 2025",
+        "Metodologia": "Leitura do livro Coraline dividida em grupos no Ensino Médio com subsequente modelagem de maquetes e cenários de biscuit no laboratório maker.",
+        "Impacto_Escola": "A biblioteca ganhou vida nova. A integração perfeita entre literatura, expressão artística e recursos maker atraiu os jovens para a leitura interpretativa ativa.",
+        "Voz_Bolsista": "As bolsistas de iniciação consolidaram sua identidade docente ao mediar trabalhos coletivos práticos, conectando a teoria interpretativa com a prática manual dos estudantes.",
+        "Dificuldades": "O acervo físico do livro na biblioteca era muito restrito, demandando compartilhamento em duplas e digitalização de capítulos.",
+        "Foto": "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=600"
+    }
 ]
 
-EMBEDDED_ACOES = [
+EMBEDDED_FORM_VISITAS = [
     {
-        "ID_Acao": 1, "Escola": "EEM Almirante Lamego", "Supervisor": "Adriano da Silva Oriano Junior", "Ano": 2025, "Bimestre": "Abr-Mai",
-        "Nome_da_Acao": "Projeto Recreio Interativo",
-        "Descricao": "Planejamento de intervalo dinâmico com queimada, pula-corda, música e futebol.",
-        "Resultados_Alcancados": "Alunos do Ensino Fundamental I participaram de jogos guiados pelos bolsistas (IDs).",
-        "Impactos_na_Escola": "A assessora de direção relatou uma redução notável de ruídos e correrias nos dias de ação.",
-        "Dificuldades_Enfrentadas": "O tempo do recreio é muito curto (15 minutos) e alguns alunos chegam no final."
+        "Carimbo": "24/02/2025 22:16:50",
+        "Email": "orianoadriano@gmail.com",
+        "Supervisor": "Adriano da Silva Oriano Junior",
+        "Data_Visita": "24/02/2025",
+        "Ficha_Avaliacao": "https://drive.google.com/open?id=10Eg8aXaaXIvxqH1dS9LisgiSS4B3CL2b",
+        "Fotos": "https://drive.google.com/open?id=1RM3AUkqIsJKyG4KuyxG8-ExAX8KBln1R, https://drive.google.com/open?id=11bNrw28LSgYdz4T5-KLkDIPez2Ex9qv_",
+        "Ficha_Frequencia": "https://drive.google.com/open?id=1G-vBPdS3Q2JIyDcZt3yc59UD8maECLvm"
     },
     {
-        "ID_Acao": 2, "Escola": "EEM Almirante Lamego", "Supervisor": "Adriano da Silva Oriano Junior", "Ano": 2025, "Bimestre": "Ago-Set",
-        "Nome_da_Acao": "Projeto Pontes do Saber",
-        "Descricao": "Aulas semanais de reforço em Matemática e Português para alunos de 4º e 5º anos.",
-        "Resultados_Alcancados": "IDs lecionaram noções lúdicas e problemas matemáticos práticos.",
-        "Impactos_na_Escola": "Fortalecimento do vínculo dos alunos e adesão total com aulas dinâmicas.",
-        "Dificuldades_Enfrentadas": "Falta de dados estatísticos de longo prazo, pois o projeto iniciou há pouco tempo."
+        "Carimbo": "22/04/2025 22:18:08",
+        "Email": "orianoadriano@gmail.com",
+        "Supervisor": "Adriano da Silva Oriano Junior",
+        "Data_Visita": "17/04/2025",
+        "Ficha_Avaliacao": "https://drive.google.com/open?id=1ZKZ-HSp_gYkL0SMcrIALEzaK3_Ptu5_U",
+        "Fotos": "https://drive.google.com/open?id=1iRQ9L99AKJmSSwfCutoK0oxPgBmzxv6h, https://drive.google.com/open?id=1FOFdEcZYZiGPGZaxJE-J5GSsspoE61h5",
+        "Ficha_Frequencia": "https://drive.google.com/open?id=1e2MbDF3-wKb-aT15klV2GnTapZgbIik7"
     },
     {
-        "ID_Acao": 3, "Escola": "EEB João Teixeira Nunes", "Supervisor": "Elisa Vieira da Silva Soares", "Ano": 2025, "Bimestre": "Fev-Mar",
-        "Nome_da_Acao": "Revitalização da Biblioteca",
-        "Descricao": "Catalogação e digitalização do acervo da biblioteca escolar por meio de um aplicativo online.",
-        "Resultados_Alcancados": "Cada livro cadastrado com resumo, imagem da capa e páginas no aplicativo virtual.",
-        "Impactos_na_Escola": "Facilitou de forma expressiva o acesso e o interesse pela leitura com acervo visível.",
-        "Dificuldades_Enfrentadas": "Acervo de literatura muito escasso, com predomínio de livros didáticos."
+        "Carimbo": "26/05/2025 08:30:48",
+        "Email": "elisavieiradasilvasoares@gmail.com",
+        "Supervisor": "Elisa Vieira da Silva Soares",
+        "Data_Visita": "23/04/2025",
+        "Ficha_Avaliacao": "https://drive.google.com/open?id=1s1LQnJ_OVkiHa_jl8ShQa14VZcooA5Oc",
+        "Fotos": "https://drive.google.com/open?id=19dYUF5kAD0950iinqr5rulDvwIIHfRyc, https://drive.google.com/open?id=1C72WpqlmGpYiDslS9wMCKqLtNORM2njb",
+        "Ficha_Frequencia": "https://drive.google.com/open?id=1NYXLywuxLzmzt-ffdE939IVi8CgokEbe"
     },
     {
-        "ID_Acao": 4, "Escola": "EEB João Teixeira Nunes", "Supervisor": "Elisa Vieira da Silva Soares", "Ano": 2026, "Bimestre": "Abr-Mai",
-        "Nome_da_Acao": "Sociedade Secreta Literária",
-        "Descricao": "Encontros do Clube do Livro JTN com dinâmicas de 'leitura às cegas' e chá literário.",
-        "Resultados_Alcancados": "Alunos escolheram livros baseados apenas em uma frase secreta. Assinaram termo de adesão.",
-        "Impactos_na_Escola": "Estímulo ao protagonismo dos participantes e valorização da biblioteca escolar.",
-        "Dificuldades_Enfrentadas": "Conciliação de horários de alunos e bolsistas que necessitou de readequação de rotina."
+        "Carimbo": "04/08/2025 15:42:00",
+        "Email": "fabirevert@gmail.com",
+        "Supervisor": "Fabíola Medeiros Savi",
+        "Data_Visita": "25/06/2025",
+        "Ficha_Avaliacao": "https://drive.google.com/open?id=1eNrNPvVdnzSTeg-GrNsp7wib9OMks6tH",
+        "Fotos": "https://drive.google.com/open?id=13zXCE4b419p9Ol89qUXOBMvbVlBs4t4k, https://drive.google.com/open?id=1aq0WuGWaZiGsBqLD5lwl-1Ps1MXDJx8y",
+        "Ficha_Frequencia": "https://drive.google.com/open?id=1j0o3BluBrxr-8rtLQCHIJUxVTqhS_Gyk"
     },
     {
-        "ID_Acao": 5, "Escola": "CEJA de Tubarão", "Supervisor": "Fabíola Medeiros Savi", "Ano": 2025, "Bimestre": "Abr-Mai",
-        "Nome_da_Acao": "Despertar Literário (Freire)",
-        "Descricao": "Encontros formativos presenciais e leituras teóricas com foco na pedagogia de Paulo Freire.",
-        "Resultados_Alcancados": "Construção do diagnóstico escolar a partir da escuta atenta dos estudantes de nivelamento.",
-        "Impactos_na_Escola": "Consolidação de uma proposta pedagógica crítica e transformadora para a EJA.",
-        "Dificuldades_Enfrentadas": "Cansaço extremo dos estudantes no período noturno após longas jornadas de trabalho."
-    },
-    {
-        "ID_Acao": 6, "Escola": "CEJA de Tubarão", "Supervisor": "Fabíola Medeiros Savi", "Ano": 2026, "Bimestre": "Fev-Mar",
-        "Nome_da_Acao": "Oficina de Literatura e Cordel",
-        "Descricao": "Oficina com o poema 'Brincadeiras' de Manoel de Barros para produção de sextilhas e xilogravura.",
-        "Resultados_Alcancados": "Estudantes da turma de nivelamento criaram folhetos de cordel e técnicas de desenho.",
-        "Impactos_na_Escola": "Impulso no desenvolvimento da escrita, leitura crítica e expressão artística de adultos.",
-        "Dificuldades_Enfrentadas": "Elevado índice de faltas dos alunos da EJA devido a imprevistos de saúde e trabalho."
-    },
-    {
-        "ID_Acao": 7, "Escola": "EEB Henrique Fontes", "Supervisor": "Lucas Zamparetti Oliveira", "Ano": 2025, "Bimestre": "Abr-Mai",
-        "Nome_da_Acao": "Xadrez na Escola (AEE)",
-        "Descricao": "Aulas de xadrez semanais no contraturno realizadas no espaço do AEE.",
-        "Resultados_Alcancados": "Alunos de todas as séries aprenderam regras teóricas e práticas do jogo de tabuleiro.",
-        "Impactos_na_Escola": "Aprimoramento notável do raciocínio lógico, foco e competências socioemocionais.",
-        "Dificuldades_Enfrentadas": "Mudanças de horários no AEE tornaram inviável o projeto no segundo semestre de 2025."
-    },
-    {
-        "ID_Acao": 8, "Escola": "EEB Henrique Fontes", "Supervisor": "Lucas Zamparetti Oliveira", "Ano": 2025, "Bimestre": "Ago-Set",
-        "Nome_da_Acao": "Correio de Denúncias contra Bullying",
-        "Descricao": "Palestra educativa sobre o bullying escolar acompanhada do 'Correio de Denúncias'.",
-        "Resultados_Alcancados": "Construção física de uma caixa coletora para que os alunos deixassem relatos anônimos.",
-        "Impactos_na_Escola": "Alunos puderam se expressar de forma segura sobre abusos sofridos e buscar apoio.",
-        "Dificuldades_Enfrentadas": "Escassez de infraestrutura adequada na escola para reuniões e empenho de material."
-    },
-    {
-        "ID_Acao": 9, "Escola": "EEB Henrique Fontes", "Supervisor": "Lucas Zamparetti Oliveira", "Ano": 2026, "Bimestre": "Abr-Mai",
-        "Nome_da_Acao": "Maio Laranja: Combate ao Abuso",
-        "Descricao": "Coreografia e ensaio da dança 'Baião da Proteção' voltada ao combate da exploração infantil.",
-        "Resultados_Alcancados": "Minipalestras nas salas acompanhadas de questionários por celular via QR Code.",
-        "Impactos_na_Escola": "Profunda sensibilização dos estudantes, professores e engajamento da comunidade escolar.",
-        "Dificuldades_Enfrentadas": "Temática altamente sensível requer cuidado pedagógico e abordagem acolhedora."
-    },
-    {
-        "ID_Acao": 10, "Escola": "EEB Senador Francisco Francisco Gallotti", "Supervisor": "Luciana Fernandes", "Ano": 2025, "Bimestre": "Jun-Jul",
-        "Nome_da_Acao": "Mundo dos Sonhos: Coraline",
-        "Descricao": "Uso do livro Coraline e produção de maquete e cenários com biscuit no laboratório maker.",
-        "Resultados_Alcancados": "Alunos recriaram personagens e cenários em biscuit a partir de leituras em grupos.",
-        "Impactos_na_Escola": "Integração perfeita entre literatura, arte manual e recursos makers de forma ativa.",
-        "Dificuldades_Enfrentadas": "Quantidade muito limitada de exemplares físicos do livro Coraline na biblioteca."
-    },
-    {
-        "ID_Acao": 11, "Escola": "EEB Senador Francisco Francisco Gallotti", "Supervisor": "Luciana Fernandes", "Ano": 2026, "Bimestre": "Abr-Mai",
-        "Nome_da_Acao": "Sarau Marina Colasanti",
-        "Descricao": "Sarau literário sobre contos 'A Moça Tecelã' e 'Entre a Espada e a Rosa' da escritora Marina Colasanti.",
-        "Resultados_Alcancados": "Alunos produziram scrapbooks, realizaram encenações teatrais e gravaram podcasts opinativos.",
-        "Impactos_na_Escola": "Estímulo exemplar à oralidade, argumentação, senso crítico e trabalho cooperativo.",
-        "Dificuldades_Enfrentadas": "Grade curricular compacta dificultou o agendamento de todas as apresentações previstas."
+        "Carimbo": "22/04/2026 16:11:04",
+        "Email": "lucaszampa@hotmail.com",
+        "Supervisor": "Lucas Zamparetti Oliveira",
+        "Data_Visita": "19/02/2026",
+        "Ficha_Avaliacao": "https://drive.google.com/open?id=1X-pgdG3x3PXl964VLku5SPjpdMKjuzMk",
+        "Fotos": "https://drive.google.com/open?id=1ZjFwf2SeADmQ8QW9nGilNe6ylecoQmke, https://drive.google.com/open?id=1xsPNKDgAGxGR7AAAlcmlZyX8iYqW3VWB",
+        "Ficha_Frequencia": "https://drive.google.com/open?id=1epLQAQRa_dv1S1U75vSM1DuxZmx55FsT"
     }
 ]
 
 # -------------------------------------------------------------
-# DATA LOADING FUNCTION
+# DATA LOADING FUNCTION (ROBUST GOOGLE SHEETS SYNC)
 # -------------------------------------------------------------
 @st.cache_data
 def load_data(gsheets_url=None):
-    df_escolas = pd.DataFrame(EMBEDDED_ESCOLAS)
-    df_acoes = pd.DataFrame(EMBEDDED_ACOES)
-    data_source_info = "Dados Internos de Exemplo (PIBID 2024-2026)"
+    df_narrativas = pd.DataFrame(EMBEDDED_NARRATIVAS)
+    df_visitas = pd.DataFrame(EMBEDDED_FORM_VISITAS)
+    data_source_info = "Dados Internos Qualitativos (PIBID 2024-2026)"
     
     if gsheets_url:
         try:
-            # Extract Spreadsheet ID
             match = re.search(r"/d/([a-zA-Z0-9-_]+)", gsheets_url)
             if match:
                 sheet_id = match.group(1)
                 export_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx"
                 
-                # Try reading sheets
-                df_escolas_temp = pd.read_excel(export_url, sheet_name="Escolas_e_Equipes")
-                df_acoes_temp = pd.read_excel(export_url, sheet_name="Registro_de_Acoes")
+                # Dynamic sheet loading
+                xls = pd.ExcelFile(export_url)
+                sheets = xls.sheet_names
                 
-                # Make sure the read worked and sheets are not empty
-                if not df_escolas_temp.empty and not df_acoes_temp.empty:
-                    df_escolas = df_escolas_temp
-                    df_acoes = df_acoes_temp
-                    data_source_info = "Conectado à Planilha do Google Sheets Online 🟢"
-                    st.sidebar.success("Sincronização com o Google Sheets concluída!")
-                else:
-                    st.sidebar.warning("A planilha online foi lida, mas os dados parecem vazios. Usando dados internos.")
-            else:
-                st.sidebar.error("URL do Google Sheets inválida! Certifique-se de copiar o link completo.")
+                # Load Narrativas sheet
+                narr_sheet = None
+                for s in sheets:
+                    if "Narrativas" in s or "Qualitativas" in s:
+                        narr_sheet = s
+                        break
+                if narr_sheet:
+                    df_narr_temp = pd.read_excel(export_url, sheet_name=narr_sheet)
+                    if not df_narr_temp.empty:
+                        # Rename columns standard
+                        df_narrativas = df_narr_temp
+                
+                # Load Visitas sheet (Form responses)
+                vis_sheet = None
+                for s in sheets:
+                    if "Respostas" in s or "Visita" in s or "Formulario" in s:
+                        vis_sheet = s
+                        break
+                if vis_sheet:
+                    df_vis_temp = pd.read_excel(export_url, sheet_name=vis_sheet)
+                    if not df_vis_temp.empty:
+                        # Map columns dynamically based on headers
+                        col_map = {}
+                        for col in df_vis_temp.columns:
+                            if "Carimbo" in str(col) or "Timestamp" in str(col):
+                                col_map[col] = "Carimbo"
+                            elif "email" in str(col).lower() or "e-mail" in str(col).lower():
+                                col_map[col] = "Email"
+                            elif "supervisor" in str(col).lower():
+                                col_map[col] = "Supervisor"
+                            elif "data da visita" in str(col).lower():
+                                col_map[col] = "Data_Visita"
+                            elif "avaliação" in str(col).lower():
+                                col_map[col] = "Ficha_Avaliacao"
+                            elif "fotos" in str(col).lower():
+                                col_map[col] = "Fotos"
+                            elif "frequencia" in str(col).lower() or "frequência" in str(col).lower():
+                                col_map[col] = "Ficha_Frequencia"
+                        df_vis_temp.rename(columns=col_map, inplace=True)
+                        df_visitas = df_vis_temp
+                
+                data_source_info = "Conectado à Planilha do Google Sheets Online 🟢"
+                st.sidebar.success("Sincronização qualitativa com o Google Sheets concluída!")
         except Exception as e:
-            st.sidebar.error(f"Erro ao conectar com Google Sheets. Verifique o compartilhamento. Detalhes: {e}")
+            st.sidebar.error(f"Erro de conexão: certifique-se de que a planilha está compartilhada como 'Leitor público'. Detalhes: {e}")
             
-    return df_escolas, df_acoes, data_source_info
+    return df_narrativas, df_visitas, data_source_info
 
 # -------------------------------------------------------------
-# SIDEBAR - CONFIGURATIONS & FILTERS
+# SIDEBAR - BRANDING & CONNECTIONS
 # -------------------------------------------------------------
-st.sidebar.image("https://contribution.usercontent.google.com/download?c=Cgpub3RlYm9va2xtEkASCWFydGlmYWN0cxozCiRhZmI3N2NhZC01MWFhLTQzZTMtOGYzNS04YTI3ZDBmZDAyMzQSCxIHEMvXv_XnDBgB&filename=pibid_dados_modelo.xlsx&opi=96797242", width=150) # Fallback indicator or generic text
-st.sidebar.title("🔗 Conexão de Dados")
+# Branding Logos (UNISUL and Anima Group styling)
+col_l1, col_l2 = st.sidebar.columns(2)
+with col_l1:
+    st.image("https://multimodal.usercontent.google.com/download?c=Cgpub3RlYm9va2xtEkASCWFydGlmYWN0cxozCiRhZmI3N2NhZC01MWFhLTQzZTMtOGYzNS04YTI3ZDBmZDAyMzQSCxIHEMvXv_XnDBgB&filename=pibid_dados_modelo.xlsx&opi=96797242", width=120, caption="PIBID / UNISUL")
+with col_l2:
+    st.image("https://multimodal.usercontent.google.com/download?c=Cgpub3RlYm9va2xtEkASCWFydGlmYWN0cxozCiRhZmI3N2NhZC01MWFhLTQzZTMtOGYzNS04YTI3ZDBmZDAyMzQSCxIHEMvXv_XnDBgB&filename=pibid_dados_modelo.xlsx&opi=96797242", width=100, caption="ÂNIMA")
 
-# Input for Google Sheet
+st.sidebar.title("🔗 Conexão Google Sheets")
 gs_url = st.sidebar.text_input(
-    "Insira o Link da Planilha Google (Compartilhada como Qualquer Pessoa com o Link pode ler):",
+    "Insira o Link Compartilhado da sua Planilha do Google Sheets:",
     placeholder="https://docs.google.com/spreadsheets/d/..."
 )
 
-# Load the data
-df_escolas, df_acoes, data_source_info = load_data(gs_url if gs_url else None)
+# Load datasets
+df_narrativas, df_visitas, data_source_info = load_data(gs_url if gs_url else None)
 
-st.sidebar.markdown(f"**Fonte Atual:** `{data_source_info}`")
+st.sidebar.markdown(f"**Fonte de Dados Ativa:**\n`{data_source_info}`")
 
 st.sidebar.divider()
-st.sidebar.title("🎯 Filtros do Portal")
+st.sidebar.title("🎯 Filtros Narrativos")
 
-# Sidebar School Filter
-escolas_list = ["Todas"] + sorted(df_escolas["Nome_Escola"].unique().tolist())
-selected_escola = st.sidebar.selectbox("Filtrar por Escola:", escolas_list)
+# School and supervisor filters
+escolas_list = ["Todas"] + sorted(df_narrativas["Escola"].unique().tolist())
+selected_escola = st.sidebar.selectbox("Filtrar por Núcleo / Escola:", escolas_list)
 
-# Sidebar Supervisor Filter
-supervisors_list = ["Todos"] + sorted(df_escolas["Supervisor"].unique().tolist())
+supervisors_list = ["Todos"] + sorted(df_narrativas["Supervisor"].unique().tolist())
 selected_supervisor = st.sidebar.selectbox("Filtrar por Supervisor:", supervisors_list)
 
 # Apply filters
-df_filtered_escolas = df_escolas.copy()
-df_filtered_acoes = df_acoes.copy()
-
+df_filtered_narr = df_narrativas.copy()
 if selected_escola != "Todas":
-    # Filter Escolas
-    df_filtered_escolas = df_filtered_escolas[df_filtered_escolas["Nome_Escola"] == selected_escola]
-    # Filter Acoes (map full name or sigla)
-    sigla = df_escolas[df_escolas["Nome_Escola"] == selected_escola]["Sigla"].values[0]
-    df_filtered_acoes = df_filtered_acoes[(df_filtered_acoes["Escola"] == selected_escola) | (df_filtered_acoes["Escola"] == sigla)]
-
+    df_filtered_narr = df_filtered_narr[df_filtered_narr["Escola"] == selected_escola]
 if selected_supervisor != "Todos":
-    df_filtered_escolas = df_filtered_escolas[df_filtered_escolas["Supervisor"] == selected_supervisor]
-    df_filtered_acoes = df_filtered_acoes[df_filtered_acoes["Supervisor"] == selected_supervisor]
+    df_filtered_narr = df_filtered_narr[df_filtered_narr["Supervisor"] == selected_supervisor]
 
 # -------------------------------------------------------------
-# HEADER SECTION
+# MAIN HEADER
 # -------------------------------------------------------------
-col_logo, col_title = st.columns([1, 8])
-with col_title:
-    st.markdown('<p class="main-title">PORTAL INTERATIVO PIBID UNISUL</p>', unsafe_allow_html=True)
-    st.markdown('<p class="subtitle">Análise Consolidada de Relatórios Bimestrais de Atividades (EEM Almirante Lamego e Escolas Parceiras) • 2024 - 2026</p>', unsafe_allow_html=True)
+st.markdown('<p class="main-title">PORTAL DE VIVÊNCIAS QUALITATIVAS PIBID UNISUL</p>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Portfólio Reflexivo de Práticas Docentes, Projetos de Intervenção e Registros Fotográficos • 2024 - 2026</p>', unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# TABBED INTERFACE
+# TABS INTERFACE
 # -------------------------------------------------------------
-tab_overview, tab_actions, tab_nucleos, tab_search = st.tabs([
-    "📊 Painel Geral (Visão Geral)", 
-    "🔍 Explorar Atividades", 
-    "🏫 Núcleos & Equipes", 
-    "📚 Projetos Especiais & Busca"
+tab_narr, tab_photos, tab_reflections, tab_search = st.tabs([
+    "📖 Portfólio de Narrativas & Vivências",
+    "📸 Mural de Visitas Mensais (Formulário)",
+    "🧠 Dimensões Qualitativas (Teoria e Prática)",
+    "🔍 Busca de Práticas"
 ])
 
 # -------------------------------------------------------------
-# TAB 1: PAINEL GERAL (OVERVIEW)
+# TAB 1: PORTFOLIO OF NARRATIVES
 # -------------------------------------------------------------
-with tab_overview:
-    # KPI cards row
-    col_kpi1, col_kpi2, col_kpi3, col_kpi4 = st.columns(4)
-    with col_kpi1:
-        st.markdown(f"""
-        <div class="kpi-card">
-            <div class="kpi-label">Escolas Parceiras</div>
-            <div class="kpi-value">{len(df_filtered_escolas)}</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col_kpi2:
-        st.markdown(f"""
-        <div class="kpi-card">
-            <div class="kpi-label">Supervisores Ativos</div>
-            <div class="kpi-value">{len(df_filtered_escolas["Supervisor"].unique())}</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col_kpi3:
-        st.markdown(f"""
-        <div class="kpi-card">
-            <div class="kpi-label">Bolsistas (IDs) Ativos</div>
-            <div class="kpi-value">{df_filtered_escolas["Bolsistas_Ativos"].sum()}</div>
-        </div>
-        """, unsafe_allow_html=True)
-    with col_kpi4:
-        st.markdown(f"""
-        <div class="kpi-card">
-            <div class="kpi-label">Ações Registradas</div>
-            <div class="kpi-value">{len(df_filtered_acoes)}</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("### 📈 Estatísticas & Evolução Temporal")
+with tab_narr:
+    st.markdown("### 📋 Narrativas Pedagógicas por Escola")
+    st.write("Abaixo estão detalhados os relatos das experiências reais que moldaram o PIBID. Cada projeto representa o engajamento dos bolsistas na construção de um ambiente escolar mais reflexivo e acolhedor.")
     
-    col_chart1, col_chart2 = st.columns(2)
-    
-    with col_chart1:
-        # Action counts per school
-        actions_by_school = df_filtered_acoes["Escola"].value_counts().reset_index()
-        actions_by_school.columns = ["Escola/Sigla", "Quantidade de Ações"]
-        fig_school = px.bar(
-            actions_by_school,
-            x="Quantidade de Ações",
-            y="Escola/Sigla",
-            orientation="h",
-            title="Distribuição de Ações Desenvolvidas por Escola",
-            color="Quantidade de Ações",
-            color_continuous_scale="Blues",
-            labels={"Escola/Sigla": "Escola"}
-        )
-        fig_school.update_layout(showlegend=False, height=350, margin=dict(t=50, b=20, l=20, r=20))
-        st.plotly_chart(fig_school, use_container_width=True)
-        
-    with col_chart2:
-        # Time distribution (Ano e Bimestre)
-        df_time = df_filtered_acoes.copy()
-        df_time["Periodo"] = df_time["Ano"].astype(str) + " - " + df_time["Bimestre"]
-        actions_by_time = df_time["Periodo"].value_counts().reset_index()
-        actions_by_time.columns = ["Período", "Quantidade de Ações"]
-        actions_by_time = actions_by_time.sort_values(by="Período")
-        
-        fig_time = px.line(
-            actions_by_time,
-            x="Período",
-            y="Quantidade de Ações",
-            title="Evolução Temporal das Atividades (Bimestral)",
-            markers=True
-        )
-        fig_time.update_traces(line_color="#1F497D", line_width=3, marker=dict(size=8, color="#1F497D"))
-        fig_time.update_layout(height=350, margin=dict(t=50, b=20, l=20, r=20))
-        st.plotly_chart(fig_time, use_container_width=True)
-
-# -------------------------------------------------------------
-# TAB 2: EXPLORAR ATIVIDADES
-# -------------------------------------------------------------
-with tab_actions:
-    st.markdown("### 📋 Registro Histórico Detalhado")
-    st.write("Clique nas linhas ou use os expanders para ver o relatório completo de cada ação pedagógica desenvolvida na comunidade escolar.")
-    
-    for idx, row in df_filtered_acoes.iterrows():
-        with st.expander(f"📌 {row['Nome_da_Acao']} — {row['Escola']} ({row['Ano']} | {row['Bimestre']})"):
-            col_info1, col_info2 = st.columns([2, 1])
-            with col_info1:
-                st.markdown(f"**Escola:** `{row['Escola']}`")
-                st.markdown(f"**Supervisor Responsável:** `{row['Supervisor']}`")
-            with col_info2:
-                st.markdown(f"**Ano Letivo:** `{row['Ano']}`")
-                st.markdown(f"**Bimestre:** `{row['Bimestre']}`")
-            
-            st.divider()
-            
-            st.markdown(f"#### 📖 Descrição da Ação:")
-            st.write(row["Descricao"])
-            
-            st.markdown(f"#### 🎯 Resultados Alcançados:")
-            st.write(row["Resultados_Alcancados"])
-            
-            col_sub1, col_sub2 = st.columns(2)
-            with col_sub1:
-                st.markdown(f"#### 🌱 Impactos na Escola:")
-                st.write(row["Impactos_na_Escola"])
-            with col_sub2:
-                st.markdown(f"#### ⚠️ Dificuldades & Desafios Enfrentados:")
-                st.write(row["Dificuldades_Enfrentadas"])
-
-# -------------------------------------------------------------
-# TAB 3: NÚCLEOS & EQUIPES
-# -------------------------------------------------------------
-with tab_nucleos:
-    st.markdown("### 🏫 Núcleos de Atuação e Corpo Docente")
-    
-    for idx, row in df_filtered_escolas.iterrows():
-        st.markdown(f"""
-        <div class="project-card">
-            <h3>🏢 {row['Nome_Escola']} ({row['Sigla']})</h3>
-            <p>👨‍🏫 <b>Supervisor(a):</b> {row['Supervisor']}</p>
-            <p>📧 <b>Email:</b> {row['Email_Supervisor']} | 📞 <b>Contato:</b> {row['Telefone_Supervisor']}</p>
-            <p>📚 <b>Subprojetos Integrados:</b> {row['Subprojetos']}</p>
-            <span class="badge-escola">Ativo</span>
-            <span class="badge-supervisor">Bolsistas de Iniciação: {row['Bolsistas_Ativos']}</span>
-        </div>
-        """, unsafe_allow_html=True)
-
-# -------------------------------------------------------------
-# TAB 4: PROJETOS ESPECIAIS & BUSCA
-# -------------------------------------------------------------
-with tab_search:
-    st.markdown("### 📚 Explorador Temático Inteligente")
-    st.write("Digite termos específicos ou palavras-chave (ex: *Bullying*, *Xadrez*, *Feminicídio*, *Leitura*, *Festa*) para encontrar em quais relatórios e núcleos as ações correspondentes foram documentadas.")
-    
-    search_query = st.text_input("🔍 Campo de Busca por Palavra-Chave:", "")
-    
-    if search_query:
-        # Full text search across several columns
-        query = search_query.lower()
-        df_results = df_filtered_acoes[
-            df_filtered_acoes["Nome_da_Acao"].str.lower().str.contains(query) |
-            df_filtered_acoes["Descricao"].str.lower().str.contains(query) |
-            df_filtered_acoes["Resultados_Alcancados"].str.lower().str.contains(query) |
-            df_filtered_acoes["Impactos_na_Escola"].str.lower().str.contains(query) |
-            df_filtered_acoes["Dificuldades_Enfrentadas"].str.lower().str.contains(query)
-        ]
-        
-        st.markdown(f"**Resultados Encontrados ({len(df_results)}):**")
-        
-        if not df_results.empty:
-            for idx, row in df_results.iterrows():
+    if df_filtered_narr.empty:
+        st.info("Nenhuma narrativa encontrada para os filtros selecionados.")
+    else:
+        for idx, row in df_filtered_narr.iterrows():
+            with st.container():
                 st.markdown(f"""
-                <div class="project-card">
-                    <h4>🔥 {row['Nome_da_Acao']}</h4>
-                    <p><span class="badge-escola">{row['Escola']}</span> 
-                       <span class="badge-supervisor">{row['Supervisor']}</span>
-                       <span class="badge-periodo">{row['Ano']} | {row['Bimestre']}</span></p>
-                    <p><b>Descrição:</b> {row['Descricao']}</p>
-                    <p><b>Resultados:</b> {row['Resultados_Alcancados']}</p>
-                    <p><b>Impactos:</b> {row['Impactos_na_Escola']}</p>
-                    <p><b>Dificuldades:</b> {row['Dificuldades_Enfrentadas']}</p>
+                <div class="qualitative-card">
+                    <div class="card-header">📌 {row['Projeto_Acao']}</div>
+                    <span class="badge-escola">🏢 {row['Escola']}</span>
+                    <span class="badge-supervisor">👨‍🏫 Supervisor: {row['Supervisor']}</span>
+                    <span class="badge-periodo">📅 {row['Periodo_Bimestre']}</span>
                 </div>
                 """, unsafe_allow_html=True)
-        else:
-            st.info("Nenhuma atividade encontrada com o termo buscado. Tente outra palavra-chave!")
+                
+                # Split page into layout columns
+                col_text, col_visual = st.columns([3, 2])
+                
+                with col_text:
+                    st.markdown("<p class='section-title'>📖 Como foi desenvolvido (Metodologia)</p>", unsafe_allow_html=True)
+                    st.markdown(f"<p class='text-content'>{row['Metodologia']}</p>", unsafe_allow_html=True)
+                    
+                    st.markdown("<p class='section-title'>🌱 Impacto Social e Pedagógico na Escola</p>", unsafe_allow_html=True)
+                    st.markdown(f"<p class='text-content'>{row['Impacto_Escola']}</p>", unsafe_allow_html=True)
+                    
+                    st.markdown("<p class='section-title'>👩‍🏫 A Voz do Bolsista (Prática Reflexiva)</p>", unsafe_allow_html=True)
+                    st.markdown(f"<p class='text-content'><i>\"{row['Voz_Bolsista']}\"</i></p>", unsafe_allow_html=True)
+                    
+                    st.markdown("<p class='section-title'>⚠️ Desafios & Como Foram Superados</p>", unsafe_allow_html=True)
+                    st.markdown(f"<p class='text-content'>{row['Dificuldades']}</p>", unsafe_allow_html=True)
+                
+                with col_visual:
+                    st.markdown("<p class='section-title'>📸 Registro Visual do Núcleo</p>", unsafe_allow_html=True)
+                    foto_url = row.get("Foto", "")
+                    if isinstance(foto_url, str) and foto_url.strip():
+                        st.image(foto_url, use_container_width=True, caption=f"Ilustração/Foto: {row['Projeto_Acao']}")
+                    else:
+                        st.info("Nenhuma foto anexada a este relato qualitativo.")
+                        
+                st.divider()
+
+# -------------------------------------------------------------
+# TAB 2: VISITS AND FORM PHOTO GALLERY
+# -------------------------------------------------------------
+with tab_photos:
+    st.markdown("### 📸 Registro e Acompanhamento de Visitas do Coordenador de Área")
+    st.write("Esta seção é integrada em tempo real à planilha de respostas do formulário que os coordenadores utilizam nas visitas mensais de acompanhamento aos núcleos do PIBID.")
+    
+    if df_visitas.empty:
+        st.info("Nenhum registro de visita encontrado.")
     else:
-        st.info("Digite uma palavra-chave acima para filtrar as ações de forma inteligente e dinâmica.")
+        for idx, row in df_visitas.iterrows():
+            supervisor_name = row.get("Supervisor", "Supervisor não informado")
+            data_visita = row.get("Data_Visita", "Data não informada")
+            
+            with st.expander(f"🏫 Visita de Acompanhamento — Núcleo do(a) Supervisor(a) {supervisor_name} ({data_visita})"):
+                col_meta1, col_meta2 = st.columns(2)
+                with col_meta1:
+                    st.markdown(f"**Carimbo de Envio:** `{row.get('Carimbo', 'N/A')}`")
+                    st.markdown(f"**Email de Envio:** `{row.get('Email', 'N/A')}`")
+                with col_meta2:
+                    st.markdown(f"**Data Oficial da Visita:** `{data_visita}`")
+                
+                st.divider()
+                
+                # Check photos column
+                photos_col = row.get("Fotos", "")
+                processed_photos = process_links(photos_col)
+                
+                st.markdown("#### 📸 Acervo Fotográfico Anexado nesta Visita:")
+                if processed_photos:
+                    images_to_show = [p for p in processed_photos if p["type"] == "image"]
+                    folders_to_show = [p for p in processed_photos if p["type"] == "folder"]
+                    
+                    # Display images
+                    if images_to_show:
+                        img_cols = st.columns(min(len(images_to_show), 3))
+                        for col_idx, img_info in enumerate(images_to_show):
+                            with img_cols[col_idx % len(img_cols)]:
+                                st.image(img_info["url"], use_container_width=True, caption=f"Foto Anexo {col_idx+1}")
+                    
+                    # Display folders
+                    if folders_to_show:
+                        for f_info in folders_to_show:
+                            st.warning(f"📂 Esta resposta contém um link para uma pasta do Google Drive: \n{f_info['url']}")
+                            st.link_button("Abrir Pasta Completa no Google Drive 🌐", f_info["url"])
+                else:
+                    st.info("Nenhum arquivo de imagem anexado nesta resposta de formulário.")
+                
+                st.divider()
+                
+                # Evaluation and Frequency sheets
+                col_doc1, col_col2 = st.columns(2)
+                with col_doc1:
+                    ficha_av = row.get("Ficha_Avaliacao", "")
+                    if isinstance(ficha_av, str) and ficha_av.strip():
+                        st.link_button("📄 Acessar Ficha de Avaliação dos IDs", ficha_av)
+                with col_col2:
+                    ficha_freq = row.get("Ficha_Frequencia", "")
+                    if isinstance(ficha_freq, str) and ficha_freq.strip():
+                        st.link_button("📝 Acessar Ficha de Frequência dos IDs", ficha_freq)
+
+# -------------------------------------------------------------
+# TAB 3: THEORETICAL AND REFLECTIVE DIMENSIONS
+# -------------------------------------------------------------
+with tab_reflections:
+    st.markdown("### 🧠 Dimensões Formativas e Impacto Crítico do PIBID")
+    st.write("Análise qualitativa aprofundada baseada nas considerações e aportes teóricos encontrados nos relatórios de atividades oficiais de 2024-2026.")
+    
+    sub_tab1, sub_tab2, sub_tab3 = st.tabs([
+        "📚 Formação de Professores (Prática Reflexiva)",
+        "⚖️ Inclusão & Justiça Social na Escola",
+        "🎯 Práticas de Superação & Flexibilização"
+    ])
+    
+    with sub_tab1:
+        st.markdown("#### 👩‍🏫 A Articulação entre Teoria e Prática e a Formação Docente")
+        st.write("""
+        Os relatórios mostram que o PIBID é de suma importância para construir confiança na atuação e conforto com o ambiente escolar [44, 280]. 
+        Entre as atividades qualitativas reflexivas que geraram esse amadurecimento, destacam-se:
+        
+        * **Memoriais Descritivos (Livro 'Infância' de Graciliano Ramos)**: Bolsistas escreveram relatos autobiográficos interligando suas próprias memórias escolares à obra do autor [4, 82, 103, 382]. Esse exercício estimulou a sensibilidade e a empatia para lidar com as realidades diversas de seus futuros alunos [356, 382].
+        * **Participação nos Conselhos de Classe como Ouvintes**: IDs dos núcleos como Henrique Fontes acompanharam as dinâmicas de fechamento trimestral dos professores [192, 211, 212, 258]. A observação ativa proporcionou aos bolsistas uma visão realista e crítica sobre avaliação continuada, indisciplina, bullying e o uso do sistema digital de regência 'Professor Online' [212, 213, 215].
+        * **Encontros de Estudo Teórico**: Leituras orientadas sobre o fracasso escolar, interseccionalidade e a pedagogia freireana serviram de base para que as pibidianas planejassem suas ações de intervenção a partir das carências reais de cada instituição [29, 131, 134].
+        """)
+        
+    with sub_tab2:
+        st.markdown("#### ⚖️ Inclusão, Acolhimento e o Combate ao Bullying")
+        st.write("""
+        A dimensão humana e o acolhimento estão no centro do PIBID UNISUL. As ações foram planejadas e executadas para garantir ambientes seguros de aprendizagem:
+        
+        * **Xadrez na Escola no Contraturno (Espaço do AEE)**: Ofereceu suporte aos alunos com necessidades educacionais especiais no Atendimento Educacional Especializado (AEE), desenvolvendo o foco, as competências socioemocionais e o raciocínio lógico [14, 176, 326].
+        * **Cuidar de Si e do Outro (NEPRE)**: O 'Correio de Denúncias' contra Bullying permitiu aos alunos expressarem relatos de sofrimento de forma anônima [208, 209]. Os bolsistas, orientadora e supervisor analisavam cada caso de forma confidencial para dar o devido encaminhamento pedagógico protetivo [209].
+        * **Conscientização em Datas Sensíveis**: Oficinas e apresentações sobre o Dia Internacional da Mulher e a gincana educativa contra a exploração infantil 'Maio Laranja' debateram e esclareceram os sinais de relacionamentos abusivos em sala de aula [9, 171, 274, 276, 285].
+        * **Alfabetização e Literatura no CEJA**: No Centro de Educação de Jovens e Adultos (CEJA), os núcleos aplicaram a escuta atenta aos alunos da EJA, muitos em fase de alfabetização, transformando a biblioteca escolar num ambiente afetuoso de pertencimento [132, 136, 147, 152].
+        """)
+        
+    with sub_tab3:
+        st.markdown("#### 🎯 Desafios Pedagógicos de Infraestrutura e Soluções Criativas")
+        st.write("""
+        Os relatórios registram de forma realista que o ambiente escolar apresenta dificuldades concretas, cuja superação fortalece o perfil profissional dos licenciandos:
+        
+        * **Limitação de Acervo Físico**: No projeto *Mundo dos Sonhos (Coraline)* no Gallotti, a quantidade muito pequena de livros físicos obrigou os bolsistas a organizarem leituras compartilhadas em duplas e a criarem capítulos digitalizados [220, 222].
+        * **Cansaço Extremo e Evasão na EJA**: Estudantes adultos que chegam à escola após longas jornadas de trabalho enfrentam esgotamento físico e mental [136]. As pibidianas contornaram esse desafio desenvolvendo estratégias afetivas envolventes, como a oficina de cordel e xilogravura com lanche e café literário [133, 136, 165].
+        * **Gestão do Tempo e Calendário**: Mudanças de cronograma e feriados demandaram dos bolsistas flexibilidade constante para replanejar suas ações em conjunto com a gestão escolar [23, 243, 275].
+        """)
+
+# -------------------------------------------------------------
+# TAB 4: PALAVRA-CHAVE SEARCH IN NARRATIVES
+# -------------------------------------------------------------
+with tab_search:
+    st.markdown("### 🔍 Busca de Narrativas por Palavra-Chave")
+    st.write("Digite um tema ou termo de interesse (ex: *Bullying*, *Livro*, *Feminicídio*, *Freire*, *EJA*) para filtrar as práticas e relatos de vivência armazenados no banco de dados.")
+    
+    search_query = st.text_input("Digite o termo para buscar:", "")
+    
+    if search_query:
+        query_clean = search_query.lower()
+        search_results = df_narrativas[
+            df_narrativas["Metodologia"].str.lower().str.contains(query_clean) |
+            df_narrativas["Impacto_Escola"].str.lower().str.contains(query_clean) |
+            df_narrativas["Voz_Bolsista"].str.lower().str.contains(query_clean) |
+            df_narrativas["Projeto_Acao"].str.lower().str.contains(query_clean) |
+            df_narrativas["Dificuldades"].str.lower().str.contains(query_clean)
+        ]
+        
+        if search_results.empty:
+            st.warning(f"Nenhum relato encontrado para o termo '{search_query}'.")
+        else:
+            st.success(f"Encontrado {len(search_results)} relato(s) pedagógico(s) correspondente(s)!")
+            for idx, row in search_results.iterrows():
+                with st.expander(f"📌 {row['Projeto_Acao']} — {row['Escola']} ({row['Periodo_Bimestre']})"):
+                    st.markdown(f"**Supervisor:** `{row['Supervisor']}`")
+                    st.markdown(f"**Como foi desenvolvido:** {row['Metodologia']}")
+                    st.markdown(f"**Impacto Social:** {row['Impacto_Escola']}")
+                    st.markdown(f"**A Voz do Bolsista:** *\"{row['Voz_Bolsista']}\"*")
+                    st.markdown(f"**Dificuldades Superadas:** {row['Dificuldades']}")
+                    
+                    foto = row.get("Foto", "")
+                    if isinstance(foto, str) and foto.strip():
+                        st.image(foto, width=400, caption=row['Projeto_Acao'])
+    else:
+        st.info("Digite uma palavra no campo acima para iniciar a busca.")
