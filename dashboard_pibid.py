@@ -75,17 +75,19 @@ st.markdown("""
         margin-top: 1.5rem;
         margin-bottom: 0.8rem;
         font-weight: bold;
+        font-size: 1.1rem;
     }
     .text-content {
         font-size: 0.95rem;
-        line-height: 1.5;
+        line-height: 1.6;
         color: #333333;
+        text-align: justify;
     }
 </style>
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# IMAGE CONVERSION UTILITIES
+# IMAGE CONVERSION UTILITIES (API-Driven Thumbnail Renderer)
 # -------------------------------------------------------------
 def get_direct_img_url(url):
     url = url.strip()
@@ -125,62 +127,95 @@ def process_links(links_str):
     return processed
 
 # -------------------------------------------------------------
-# EMBEDDED BACKUP DATA (PIBID qualitative narratives)
+# EMBEDDED BACKUP DATA (PIBID qualitative narratives - Academically Dense & Complete)
 # -------------------------------------------------------------
 EMBEDDED_NARRATIVAS = [
     {
         "Escola": "EEM Almirante Lamego", 
         "Supervisor": "Adriano da Silva Oriano Junior", 
-        "Projeto_Acao": "Recreio Interativo", 
-        "Periodo_Bimestre": "Abril/Maio 2025",
-        "Metodologia": "Intervalos dinamizados no Ensino Fundamental I com brincadeiras cooperativas como pula-corda, queimada e futebol guiadas pelos bolsistas.",
-        "Impacto_Escola": "A assessoria de direção relatou uma redução notável de ruídos e correrias nos corredores e pátios nos dias de ação, transformando o recreio num espaço de respeito mútuo e integração sadia.",
-        "Voz_Bolsista": "Os IDs vivenciaram os primeiros passos práticos da regência, aprendendo a planejar de forma interdisciplinar e articulando teorias de recreação cooperativa diretamente na prática escolar.",
-        "Dificuldades": "O tempo do recreio é muito curto (15 minutos), exigindo agilidade extrema na organização do material para aproveitar cada minuto.",
+        "Projeto_Acao": "Recreio Interativo & Gamificação", 
+        "Periodo_Bimestre": "Abril/Maio 2025 (Reativado Fev/Mar 2026)",
+        "Metodologia": "Intervalos dinamizados no Ensino Fundamental I com planejamento sistemático de jogos motores cooperativos (pula-corda, queimada, circuitos de agilidade, futebol e expressão corporal). Em 2026, o projeto foi reformulado pela equipe acadêmica com a incorporação de técnicas de gamificação. Foram criados critérios objetivos de participação ativa e socialização, culminando na produção física e entrega de certificados personalizados ('Você é Brilhante', 'Super Participante') e brindes simbólicos feitos de EVA para estimular o engajamento continuado.",
+        "Impacto_Escola": "A assessoria de direção da escola registrou formalmente uma redução significativa nos ruídos, correria excessiva e desentendimentos no pátio e nos corredores durante o recreio escolar nos dias de ação. O espaço do recreio foi ressignificado, deixando de ser um tempo ocioso e desestruturado para tornar-se um ambiente de inclusão escolar, desenvolvimento motor consciente e convivência lúdica democrática entre diferentes faixas etárias.",
+        "Voz_Bolsista": "Os bolsistas (IDs) de Educação Física e Pedagogia relataram uma excelente articulação entre a fundamentação teórica de jogos cooperativos e a transposição prática na regência compartilhada. Essa inserção progressiva no ambiente escolar permitiu aos futuros professores superar o nervosismo inicial de reger grupos heterogêneos, consolidando suas identidades docentes por meio do planejamento sistemático e da mediação pedagógica.",
+        "Dificuldades": "A extrema brevidade do recreio (apenas 15 minutos de duração) exigiu agilidade extrema na organização prévia dos materiais e na divisão rápida das turmas. A falta inicial de material diversificado foi suprida pela confecção de recursos alternativos duráveis pelas pibidianas.",
         "Foto": "https://drive.google.com/open?id=1RM3AUkqIsJKyG4KuyxG8-ExAX8KBln1R"
+    },
+    {
+        "Escola": "EEM Almirante Lamego", 
+        "Supervisor": "Adriano da Silva Oriano Junior", 
+        "Projeto_Acao": "Pontes do Saber: Nivelamento Pedagógico", 
+        "Periodo_Bimestre": "Agosto a Novembro 2025",
+        "Metodologia": "Programa de reforço escolar e nivelamento estruturado para as turmas de 4º e 5º anos do Ensino Fundamental I, focado em mitigar defasagens críticas nas áreas de Alfabetização, Compreensão Leitora e Raciocínio Lógico-Matemático. O projeto envolveu reuniões de alinhamento diagnóstico com as regentes e reuniões periódicas de planejamento metodológico com a coordenação. As aulas presenciais de 1h30 semanais utilizavam recursos lúdicos, dinâmicas de raciocínio concreto e escrita individualizada para aproximar os estudantes de forma prazerosa das disciplinas escolares fundamentais.",
+        "Impacto_Escola": "Observou-se um fortalecimento do vínculo afetivo dos alunos com a escola e uma sensível evolução em suas notas nas avaliações regulares conduzidas pelas professoras das turmas de origem. Houve adesão integral das famílias das crianças participantes, que frequentavam ativamente as oficinas pedagógicas no contraturno escolar, transformando o espaço do reforço em um polo acolhedor de autoconfiança acadêmica.",
+        "Voz_Bolsista": "Os bolsistas (IDs) de Letras e Pedagogia vivenciaram de forma profunda as complexidades da diferenciação pedagógica e do planejamento de aulas de apoio no contraturno. Relatam que o projeto ensinou-os a importância do diagnóstico contínuo de defasagens e de exercer a paciência metodológica para adaptar o cronograma de ensino aos ritmos heterogêneos de cada criança.",
+        "Dificuldades": "A inflexibilidade do calendário escolar do contraturno exigiu dos bolsistas uma rígida readequação em suas rotinas de estudos na universidade. O desafio de engajar alunos que apresentavam histórico de frustração escolar foi superado pela criação de jogos matemáticos concretos de tabuleiro e o uso de lanches afetivos.",
+        "Foto": "https://drive.google.com/open?id=1iRQ9L99AKJmSSwfCutoK0oxPgBmzxv6h"
     },
     {
         "Escola": "EEB João Teixeira Nunes", 
         "Supervisor": "Elisa Vieira da Silva Soares", 
-        "Projeto_Acao": "Sociedade Secreta Literária", 
-        "Periodo_Bimestre": "Fevereiro/Março 2026",
-        "Metodologia": "Criação de carteirinhas de membro personalizadas e convites oficiais misteriosos para encontros de leitura no Clube do Livro JTN com temática 'Leitura às Cegas'.",
-        "Impacto_Escola": "Estimulou fortemente o protagonismo e o sentimento de pertença dos alunos. A biblioteca, antes subutilizada, passou a ser um dos ambientes mais frequentados e vibrantes da escola.",
-        "Voz_Bolsista": "Permitiu aos bolsistas de Letras e Pedagogia desenvolver estratégias de incentivo afetivas e personalizadas, aproximando os estudantes do prazer literário por meio do lúdico.",
-        "Dificuldades": "A necessidade de conciliar horários de trabalho de bolsistas e alunos demandou flexibilização e reagendamentos constantes da rotina escolar.",
+        "Projeto_Acao": "Sociedade Secreta Literária / Clube do Livro JTN", 
+        "Periodo_Bimestre": "Fevereiro a Junho de 2026",
+        "Metodologia": "Projeto de incentivo à leitura literária voltado a estudantes do Ensino Médio e anos finais do Fundamental. Iniciou-se com a confecção e distribuição de convites enigmáticos nas salas de aula ('Se desejas ingressar nesta respeitável sociedade...'). Para consolidar a pertença, os estudantes preencheram fichas de inscrição e receberam carteirinhas oficiais de membros personalizadas com fotos. As reuniões semanais eram estruturadas como encontros de 'Leitura às Cegas' acompanhados de chá e biscoitos, nos quais os alunos debatiam as obras sem rótulos de autor, trocavam cartas anônimas destinadas aos personagens e montavam lapbooks interativos sobre enredos.",
+        "Impacto_Escola": "Resgate e revitalização do papel social da biblioteca escolar, que se tornou um dinâmico polo de convivência cultural ativa, leitura autónoma e debate crítico. O projeto promoveu o protagonismo juvenil, o desenvolvimento da interpretação crítica e do letramento literário estético dos estudantes, aproximando-os voluntariamente e com entusiasmo do espaço da biblioteca.",
+        "Voz_Bolsista": "As bolsistas de Letras e Pedagogia planejaram as oficinas com foco na estética da recepção e no incentivo afetivo à leitura. Relatam que mediar rodas de conversas em torno do chá literário ensinou-lhes como o lúdico e a hospitalidade reduzem a resistência dos estudantes à literatura clássica, aproximando os futuros docentes de uma prática acolhedora.",
+        "Dificuldades": "Conciliar os horários de presença das bolsistas na escola com o período escolar dos alunos participantes demandou flexibilização e reagendamentos constantes, contornados pela criação de encontros em dias alternados e plantões de leitura na biblioteca.",
         "Foto": "https://drive.google.com/open?id=19dYUF5kAD0950iinqr5rulDvwIIHfRyc"
+    },
+    {
+        "Escola": "EEB João Teixeira Nunes", 
+        "Supervisor": "Elisa Vieira da Silva Soares", 
+        "Projeto_Acao": "Revitalização e Reestruturação da Biblioteca", 
+        "Periodo_Bimestre": "Fevereiro a Maio de 2025",
+        "Metodologia": "Desenvolvimento de um plano de ação sistemático para modernizar o acervo ocioso da biblioteca escolar. Os bolsistas atuaram na catalogação física, reorganização por gêneros literários de interesse e faixa etária, identificação magnética e digitalização do acervo utilizando um aplicativo online que exibe capa do livro, número de páginas e resumos detalhados para consulta facilitada. Como fomento estético-visual, desenharam a mão livre um grande mural de incentivo utilizando páginas de livros que seriam descartados, e aplicaram questionários virtuais aos professores sobre livros favoritos para criar murais externos de indicação literária.",
+        "Impacto_Escola": "Transformou a biblioteca de um espaço passivo de depósito em um ambiente convidativo, acolhedor e dinâmico na rotina da escola. Facilitou imensamente o fluxo de busca de livros pelos estudantes, aumentando drasticamente o índice bimestral de empréstimos e o interesse voluntário dos discentes por leituras extracurriculares de lazer.",
+        "Voz_Bolsista": "O envolvimento dos pibidianos revelou a importância da gestão do espaço físico educativo como ferramenta ativa de incentivo ao conhecimento. Compreenderam as rotinas administrativas, a relevância do planejamento colaborativo com o corpo docente e a estruturação de ambientes dinâmicos que dialoguem afetivamente com os alunos.",
+        "Dificuldades": "A grave escassez inicial de obras contemporâneas de literatura infantojuvenil de interesse e o predomínio de livros didáticos antigos. Os bolsistas contornaram esse desafio organizando campanhas de doações na universidade e contatos comunitários para captação de recursos.",
+        "Foto": "https://drive.google.com/open?id=1rBVObCfSfHsdN3FnacbgvX1CDgQ6AXu3"
+    },
+    {
+        "Escola": "EEB João Teixeira Nunes", 
+        "Supervisor": "Elisa Vieira da Silva Soares", 
+        "Projeto_Acao": "A Colcha de Retalhos: Poesia e Identidade", 
+        "Periodo_Bimestre": "Outubro a Novembro de 2025",
+        "Metodologia": "Oficina de escrita criativa e expressão artística com turmas de 5º ano, baseada na leitura do livro de poemas 'Sobre Importâncias' de Manoel de Barros e a obra infantojuvenil 'Feita de Pano' de Valéria Belém. Os estudantes debateram sobre as coisas que possuem real valor e afeto em suas vidas e redigiram poemas individuais sobre 'suas importâncias'. Das produções, os bolsistas extraíram versos marcantes e criaram um grande poema coletivo. Na aula de artes, cada aluno pintou com tinta acrílica e marcadores permanentes o seu verso autoral sobre um retalho de tecido de algodão cru. Os retalhos foram costurados em uma grande colcha física exposta no corredor.",
+        "Impacto_Escola": "Impacto pedagógico e socioemocional profundo, promovendo a autoria, a sensibilidade artística e a reflexão sobre identidade em crianças de anos iniciais. A colcha de retalhos exposta no corredor principal se tornou símbolo físico do trabalho cooperativo e da valorização estética della escrita, elevando a autoestima e o sentimento de reconhecimento coletivo.",
+        "Voz_Bolsista": "Os bolsistas puderam experimentar metodologias de letramento literário que uniram escrita, pintura e expressão artesanal. Relatam que ver o entusiasmo dos alunos na pintura de seus próprios poemas evidenciou o poder de desmistificar o ensino de poesia, tornando-o acessível e interligado a memórias afetivas infantis.",
+        "Dificuldades": "A heterogeneidade de níveis de escrita e a resistência inicial de some estudantes em redigir poemas autorais. O obstáculo foi superado pelo acompanhamento individualizado e mediação atenta de cada dupla de pibidianos, estimulando a livre expressão oral antes da escrita.",
+        "Foto": "https://drive.google.com/open?id=1SgPaUc3WT0jL3AElsuzXzpzffti_saHz"
     },
     {
         "Escola": "CEJA de Tubarão", 
         "Supervisor": "Fabíola Medeiros Savi", 
-        "Projeto_Acao": "Despertar Literário & Oficinas de Cordel", 
-        "Periodo_Bimestre": "Fevereiro/Março 2026",
-        "Metodologia": "Oficina de cordéis baseada no poema 'Brincadeiras' de Manoel de Barros, com produção de sextilhas e xilogravuras por estudantes do nivelamento.",
-        "Impacto_Escola": "Aproximação de adultos da EJA (muitos em processo de alfabetização) do universo da literatura crítica, fomentando a autoconfiança de ler e escrever.",
-        "Voz_Bolsista": "As pibidianas exercitaram o diálogo constante e a escuta atenta, adaptando propostas às heterogeneidades dos estudantes com níveis de escrita variados.",
-        "Dificuldades": "O cansaço dos estudantes da EJA após longas jornadas de trabalho e o elevado índice de faltas por imprevistos de saúde exigiram sensibilidade pedagógica.",
+        "Projeto_Acao": "Despertar Literário: Alfabetização e Cordel", 
+        "Periodo_Bimestre": "Fevereiro a Maio de 2026 (Início em Abril 2025)",
+        "Metodologia": "Projeto de letramento literário crítico e expressão poética para estudantes de nivelamento (séries iniciais) do CEJA de Tubarão, fundamentado nos aportes teóricos da pedagogia freireana ('Cartas à Guiné-Bissau' e 'O Ato de Ler'). As ações envolveram momentos de escuta e contação de histórias na biblioteca escolar, seguidas de oficinas sequenciais de folhetos de cordel inspiradas no poema 'Brincadeiras' de Manoel de Barros. Os alunos da EJA (incluindo adultos e idosos) debateram sobre suas memórias de infância e produziram sextilhas de cordéis autorais e ilustrações baseadas na técnica da xilogravura (usando bandejas de isopor e tinta preta).",
+        "Impacto_Escola": "Fomento exemplar do sentimento de autoconfiança, autoria e emancipation sociocultural de estudantes adultos com histórico de exclusão ou pouca escolaridade escolar. Ao verem suas trajetórias de vida e memórias transformadas em cordéis autorais expostos, os alunos integraram-se como sujeitos críticos no processo de alfabetização de forma prazerosa.",
+        "Voz_Bolsista": "Os bolsistas de Pedagogia realizaram uma articulação dialógica profunda, compreendendo que na EJA a alfabetização deve emergir das carências reais e do repertório de vivências do próprio aluno. Relatam que o projeto desenvolveu a escuta sensível, paciência pedagógica e habilidade para ajustar propostas às heterogeneidades dos ritmos cognitivos.",
+        "Dificuldades": "O cansaço físico extremo dos estudantes noturnos da EJA após longas jornadas de trabalho e o elevado índice de faltas por imprevistos laborais ou familiares. Os bolsistas contornaram os obstáculos por meio de dinâmicas envolvendo lanches coletivos, café literário com momentos reflexivos e acolhimento sensível das ausências.",
         "Foto": "https://drive.google.com/open?id=13zXCE4b419p9Ol89qUXOBMvbVlBs4t4k"
     },
     {
         "Escola": "EEB Henrique Fontes", 
         "Supervisor": "Lucas Zamparetti Oliveira", 
-        "Projeto_Acao": "Práticas de Acolhimento NEPRE (Combate ao Bullying)", 
-        "Periodo_Bimestre": "Agosto/Setembro 2025",
-        "Metodologia": "Palestra educativa sobre bullying acompanhada da confecção e distribuição de caixas físicas e QR Codes anônimos para o 'Correio de Denúncias'.",
-        "Impacto_Escola": "Os alunos ganharam um canal seguro para relatar abusos. Os casos foram avaliados conjuntamente pela orientadora pedagógica e bolsistas do PIBID para encaminhamento seguro.",
-        "Voz_Bolsista": "Os licenciandos desenvolveram competências socioemocionais fundamentais, como empatia, acolhimento humanizado e escuta de realidades complexas e sensíveis.",
-        "Dificuldades": "A escassez de salas específicas e recursos tecnológicos adequados para as reuniões do núcleo exigiu criatividade na partilha de espaços comuns.",
+        "Projeto_Acao": "Xadrez na Escola: Cognição e Inclusão no AEE", 
+        "Periodo_Bimestre": "Abril de 2025 a Julho de 2026",
+        "Metodologia": "Implementação de oficinas pedagógicas de xadrez em contraturno escolar, realizadas nas manhãs de sexta-feira das 7h30 às 11h30. O projeto foi desenhado em conjunto com os profissionais do Atendimento Educacional Especializado (AEE) e ocorreu de forma contínua na sala do AEE, sendo aberto a estudantes de todas as séries dos períodos vespertino e noturno. A metodologia abordou desde noções e regras básicas de movimentação de peças de xadrez até noções avançadas de táticas e jogos em equipes, com ênfase na gamificação e no uso do lúdico.",
+        "Impacto_Escola": "Impacto notável no desenvolvimento do raciocínio lógico-matemático, da concentração, do foco e da capacidade de tomada de decisão estratégica dos alunos regidos. No âmbito social e inclusivo, o projeto consolidou o espaço do AEE como polo acolhedor, integrando de forma harmônica e igualitária alunos com deficiências e transtornos em atividades socioeducativas cooperativas, estimulando a resiliência pedagógica.",
+        "Voz_Bolsista": "Os bolsistas de Educação Física e Ciências Biológicas relatam que o ensino do xadrez exigiu planejamento estratégico e didática apurada para explicar regras abstratas de forma simples e inclusiva. Vivenciaram na prática os princípios de uma educação humanizada e adaptada à diversidade de ritmos individuais de aprendizagem na sala de aula do AEE.",
+        "Dificuldades": "As alterações na matriz de horários da escola e a incompatibilidade inicial de agendas dos bolsistas com o AEE no final de 2025, o que demandou reuniões de alinhamento com a equipe gestora para a reformulação teórica e reativação plena e bem-sucedida do projeto em 2026.",
         "Foto": "https://drive.google.com/open?id=1ZjFwf2SeADmQ8QW9nGilNe6ylecoQmke"
     },
     {
         "Escola": "EEB Senador Francisco Benjamin Gallotti", 
         "Supervisor": "Luciana Fernandes", 
-        "Projeto_Acao": "Mundo dos Sonhos (Coraline Maker)", 
-        "Periodo_Bimestre": "Junho/Julho 2025",
-        "Metodologia": "Leitura do livro Coraline dividida em grupos no Ensino Médio com subsequente modelagem de maquetes e cenários de biscuit no laboratório maker.",
-        "Impacto_Escola": "A biblioteca ganhou vida nova. A integração perfeita entre literatura, expressão artística e recursos maker atraiu os jovens para a leitura interpretativa ativa.",
-        "Voz_Bolsista": "As bolsistas de iniciação consolidaram sua identidade docente ao mediar trabalhos coletivos práticos, conectando a teoria interpretativa com a prática manual dos estudantes.",
-        "Dificuldades": "O acervo físico do livro na biblioteca era muito restrito, demandando compartilhamento em duplas e digitalização de capítulos.",
+        "Projeto_Acao": "Mundo dos Sonhos: Coraline Maker", 
+        "Periodo_Bimestre": "Junho a Setembro de 2025",
+        "Metodologia": "Projeto de leitura interpretativa ativa com turmas do Ensino Médio, utilizando como fomento literário o livro de fantasia 'Coraline', de Neil Gaiman. Os estudantes realizaram leituras orientadas em pequenos grupos, debateram e estabeleceram relações reflexivas entre o enredo da obra e suas próprias transformações pessoais e relações sociofamiliares. Como transposição estética interdisciplinar, os alunos foram levados ao laboratório maker de artes para confeccionar maquetes tridimensionais detalhadas dos cenários e modelar os personagens do livro utilizando biscuit e argila.",
+        "Impacto_Escola": "As maquetes e as produções textuais foram reunidas em um 'Varal da Leitura' e expostas no corredor principal da escola. A biblioteca e as salas de leitura ganharam grande dinamismo e os alunos expressaram enorme protagonismo juvenil, aproximando-se voluntariamente do universo literário através da integração inovadora com recursos de arte maker.",
+        "Voz_Bolsista": "As bolsistas de Iniciação (IDs) consolidaram suas identidades docentes ao mediar reflexões complexas no Ensino Médio. Relatam que o projeto ensinou-as a importância de transpor conteúdos textuais para formas concretas de produção artística manual, despertando a sensibilidade estética e a criatividade como aliadas do letramento.",
+        "Dificuldades": "A falta crítica de exemplares físicos do livro 'Coraline' na biblioteca para todos os alunos participantes. O obstáculo foi superado pelas pibidianas ao baixar e disponibilizar arquivos digitais em PDF licenciados nos tablets da escola, organizando círculos de leitura compartilhados em duplas.",
         "Foto": "https://drive.google.com/open?id=1oJxomWUxnFyoOhUe0dgmQXxn4517bXTu"
     }
 ]
@@ -262,7 +297,29 @@ def load_data(gsheets_url=None):
                 if narr_sheet:
                     df_narr_temp = pd.read_excel(export_url, sheet_name=narr_sheet)
                     if not df_narr_temp.empty:
-                        # Rename columns standard
+                        # Dynamic column mapper to prevent standard KeyErrors
+                        narr_col_map = {}
+                        for col in df_narr_temp.columns:
+                            col_str = str(col).lower()
+                            if "escola" in col_str or "núcleo" in col_str or "nucleo" in col_str:
+                                narr_col_map[col] = "Escola"
+                            elif "supervisor" in col_str:
+                                narr_col_map[col] = "Supervisor"
+                            elif "projeto" in col_str or "ação" in col_str or "acao" in col_str:
+                                narr_col_map[col] = "Projeto_Acao"
+                            elif "período" in col_str or "periodo" in col_str or "bimestre" in col_str:
+                                narr_col_map[col] = "Periodo_Bimestre"
+                            elif "metodologia" in col_str or "desenvolvido" in col_str:
+                                narr_col_map[col] = "Metodologia"
+                            elif "impacto" in col_str or "social" in col_str:
+                                narr_col_map[col] = "Impacto_Escola"
+                            elif "voz" in col_str or "bolsista" in col_str or "reflexiva" in col_str:
+                                narr_col_map[col] = "Voz_Bolsista"
+                            elif "dificuldade" in col_str or "superação" in col_str or "superacao" in col_str or "desafios" in col_str:
+                                narr_col_map[col] = "Dificuldades"
+                            elif "foto" in col_str or "link" in col_str or "imagem" in col_str:
+                                narr_col_map[col] = "Foto"
+                        df_narr_temp.rename(columns=narr_col_map, inplace=True)
                         df_narrativas = df_narr_temp
                 
                 # Load Visitas sheet (Form responses)
@@ -389,7 +446,7 @@ with tab_narr:
                     st.markdown(f"<p class='text-content'>{row['Impacto_Escola']}</p>", unsafe_allow_html=True)
                     
                     st.markdown("<p class='section-title'>👩‍🏫 A Voz do Bolsista (Prática Reflexiva)</p>", unsafe_allow_html=True)
-                    st.markdown(f"<p class='text-content'><i>\"{row['Voz_Bolsista']}\"</i></p>", unsafe_allow_html=True)
+                    st.markdown(f"<p class='text-content'><i>\\\"{row['Voz_Bolsista']}\\\"</i></p>", unsafe_allow_html=True)
                     
                     st.markdown("<p class='section-title'>⚠️ Desafios & Como Foram Superados</p>", unsafe_allow_html=True)
                     st.markdown(f"<p class='text-content'>{row['Dificuldades']}</p>", unsafe_allow_html=True)
@@ -458,8 +515,6 @@ with tab_photos:
                             st.link_button("Abrir Pasta Completa no Google Drive 🌐", f_info["url"])
                 else:
                     st.info("Nenhum arquivo de imagem anexado nesta resposta de formulário.")
-                
-
 
 # -------------------------------------------------------------
 # TAB 3: THEORETICAL AND REFLECTIVE DIMENSIONS
@@ -477,12 +532,12 @@ with tab_reflections:
     with sub_tab1:
         st.markdown("#### 👩‍🏫 A Articulação entre Teoria e Prática e a Formação Docente")
         st.write("""
-        Os relatórios mostram que o PIBID é de suma importância para construir confiança na atuação e conforto com o ambiente escolar [44, 280]. 
+        Os relatórios mostram que o PIBID é de suma importância para construir confiança na atuação e conforto com o ambiente escolar. 
         Entre as atividades qualitativas reflexivas que geraram esse amadurecimento, destacam-se:
         
-        * **Memoriais Descritivos (Livro 'Infância' de Graciliano Ramos)**: Bolsistas escreveram relatos autobiográficos interligando suas próprias memórias escolares à obra do autor [4, 82, 103, 382]. Esse exercício estimulou a sensibilidade e a empatia para lidar com as realidades diversas de seus futuros alunos [356, 382].
-        * **Participação nos Conselhos de Classe como Ouvintes**: IDs dos núcleos como Henrique Fontes acompanharam as dinâmicas de fechamento trimestral dos professores [192, 211, 212, 258]. A observação ativa proporcionou aos bolsistas uma visão realista e crítica sobre avaliação continuada, indisciplina, bullying e o uso do sistema digital de regência 'Professor Online' [212, 213, 215].
-        * **Encontros de Estudo Teórico**: Leituras orientadas sobre o fracasso escolar, interseccionalidade e a pedagogia freireana serviram de base para que as pibidianas planejassem suas ações de intervenção a partir das carências reais de cada instituição [29, 131, 134].
+        * **Memoriais Descritivos (Livro 'Infância' de Graciliano Ramos)**: Bolsistas escreveram relatos autobiográficos interligando suas próprias memórias escolares à obra do autor. Esse exercício estimulou a sensibilidade e a empatia para lidar com as realidades diversas de seus futuros alunos.
+        * **Participação nos Conselhos de Classe como Ouvintes**: IDs dos núcleos como Henrique Fontes acompanharam as dinâmicas de fechamento trimestral dos professores. A observação ativa proporcionou aos bolsistas uma visão realista e crítica sobre avaliação continuada, indisciplina, bullying e o uso do sistema digital de regência 'Professor Online'.
+        * **Encontros de Estudo Teórico**: Leituras orientadas sobre o fracasso escolar, interseccionalidade e a pedagogia freireana serviram de base para que as pibidianas planejassem suas ações de intervenção a partir das carências reais de cada instituição.
         """)
         
     with sub_tab2:
@@ -490,10 +545,10 @@ with tab_reflections:
         st.write("""
         A dimensão humana e o acolhimento estão no centro do PIBID UNISUL. As ações foram planejadas e executadas para garantir ambientes seguros de aprendizagem:
         
-        * **Xadrez na Escola no Contraturno (Espaço do AEE)**: Ofereceu suporte aos alunos com necessidades educacionais especiais no Atendimento Educacional Especializado (AEE), desenvolvendo o foco, as competências socioemocionais e o raciocínio lógico [14, 176, 326].
-        * **Cuidar de Si e do Outro (NEPRE)**: O 'Correio de Denúncias' contra Bullying permitiu aos alunos expressarem relatos de sofrimento de forma anônima [208, 209]. Os bolsistas, orientadora e supervisor analisavam cada caso de forma confidencial para dar o devido encaminhamento pedagógico protetivo [209].
-        * **Conscientização em Datas Sensíveis**: Oficinas e apresentações sobre o Dia Internacional da Mulher e a gincana educativa contra a exploração infantil 'Maio Laranja' debateram e esclareceram os sinais de relacionamentos abusivos em sala de aula [9, 171, 274, 276, 285].
-        * **Alfabetização e Literatura no CEJA**: No Centro de Educação de Jovens e Adultos (CEJA), os núcleos aplicaram a escuta atenta aos alunos da EJA, muitos em fase de alfabetização, transformando a biblioteca escolar num ambiente afetuoso de pertencimento [132, 136, 147, 152].
+        * **Xadrez na Escola no Contraturno (Espaço do AEE)**: Ofereceu suporte aos alunos com necessidades educacionais especiais no Atendimento Educacional Especializado (AEE), desenvolvendo o foco, as competências socioemocionais e o raciocínio lógico.
+        * **Cuidar de Si e do Outro (NEPRE)**: O 'Correio de Denúncias' contra Bullying permitiu aos alunos expressarem relatos de sofrimento de forma anônima. Os bolsistas, orientadora e supervisor analisavam cada caso de forma confidencial para dar o devido encaminhamento pedagógico protetivo.
+        * **Conscientização em Datas Sensíveis**: Oficinas e apresentações sobre o Dia Internacional da Mulher e a gincana educativa contra a exploração infantil 'Maio Laranja' debateram e esclareceram os sinais de relacionamentos abusivos em sala de aula.
+        * **Alfabetização e Literatura no CEJA**: No Centro de Educação de Jovens e Adultos (CEJA), os núcleos aplicaram a escuta atenta aos alunos da EJA, muitos em fase de alfabetização, transformando a biblioteca escolar num ambiente afetuoso de pertencimento.
         """)
         
     with sub_tab3:
@@ -501,9 +556,9 @@ with tab_reflections:
         st.write("""
         Os relatórios registram de forma realista que o ambiente escolar apresenta dificuldades concretas, cuja superação fortalece o perfil profissional dos licenciandos:
         
-        * **Limitação de Acervo Físico**: No projeto *Mundo dos Sonhos (Coraline)* no Gallotti, a quantidade muito pequena de livros físicos obrigou os bolsistas a organizarem leituras compartilhadas em duplas e a criarem capítulos digitalizados [220, 222].
-        * **Cansaço Extremo e Evasão na EJA**: Estudantes adultos que chegam à escola após longas jornadas de trabalho enfrentam esgotamento físico e mental [136]. As pibidianas contornaram esse desafio desenvolvendo estratégias afetivas envolventes, como a oficina de cordel e xilogravura com lanche e café literário [133, 136, 165].
-        * **Gestão do Tempo e Calendário**: Mudanças de cronograma e feriados demandaram dos bolsistas flexibilidade constante para replanejar suas ações em conjunto com a gestão escolar [23, 243, 275].
+        * **Limitação de Acervo Físico**: No projeto *Mundo dos Sonhos (Coraline)* no Gallotti, a quantidade muito pequena de livros físicos obrigou os bolsistas a organizarem leituras compartilhadas em duplas e a criarem capítulos digitalizados nos tablets da escola.
+        * **Canso Extremo e Evasão na EJA**: Estudantes adultos que chegam à escola após longas jornadas de trabalho enfrentam esgotamento físico e mental. As pibidianas contornaram esse desafio desenvolvendo estratégias afetivas envolvendo lanches coletivos e cafés literários.
+        * **Gestão do Tempo e Calendário**: Mudanças de cronograma, feriados e readequações curriculares demandaram dos bolsistas flexibilidade constante para replanejar suas ações em conjunto com a gestão escolar.
         """)
 
 # -------------------------------------------------------------
@@ -534,11 +589,15 @@ with tab_search:
                     st.markdown(f"**Supervisor:** `{row['Supervisor']}`")
                     st.markdown(f"**Como foi desenvolvido:** {row['Metodologia']}")
                     st.markdown(f"**Impacto Social:** {row['Impacto_Escola']}")
-                    st.markdown(f"**A Voz do Bolsista:** *\"{row['Voz_Bolsista']}\"*")
+                    st.markdown(f"**A Voz do Bolsista:** *\"{row['Voz_Bolsista']}\"*\n")
                     st.markdown(f"**Dificuldades Superadas:** {row['Dificuldades']}")
                     
                     foto = row.get("Foto", "")
                     if isinstance(foto, str) and foto.strip():
-                        st.image(foto, width=400, caption=row['Projeto_Acao'])
+                        ptype, conv_url = get_direct_img_url(foto)
+                        if ptype == "image":
+                            st.image(conv_url, width=500, caption=row['Projeto_Acao'])
+                        else:
+                            st.image(foto, width=500, caption=row['Projeto_Acao'])
     else:
         st.info("Digite uma palavra no campo acima para iniciar a busca.")
