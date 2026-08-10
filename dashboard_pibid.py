@@ -89,25 +89,49 @@ st.markdown("""
 # -------------------------------------------------------------
 # IMAGE CONVERSION UTILITIES (API-Driven Thumbnail Renderer)
 # -------------------------------------------------------------
+def clean_file_name(name):
+    if not name:
+        return ""
+    # Remove file extension
+    name = re.sub(r"\.[a-zA-Z0-9]+$", "", name)
+    # Remove dates in format DD/MM/YYYY, DD-MM-YYYY, DD_MM_YYYY, YYYY-MM-DD, or similar patterns
+    name = re.sub(r"[-_]?\d{2,4}[-_\/.]\d{2}[-_\/.]\d{2,4}", "", name)
+    # Remove 4 digit years (e.g., 2025, 2026)
+    name = re.sub(r"[-_]?\d{4}", "", name)
+    # Clean underscores, dashes, and extra spaces
+    name = name.replace("_", " ").replace("-", " ").strip()
+    # capitalize words
+    name = " ".join([w.capitalize() for w in name.split()])
+    return name
+
 def get_direct_img_url(url):
     url = url.strip()
     if not url:
-        return "invalid", ""
+        return "invalid", "", ""
+    
+    # Extract file name from parentheses if present (common in Google Forms file uploads)
+    file_name = ""
+    match_paren = re.search(r"\s*\(([^)]+)\)", url)
+    if match_paren:
+        file_name = match_paren.group(1)
+        url = re.sub(r"\s*\([^)]+\)", "", url).strip()
+        
     # Check if folder link
     if "drive.google.com/drive/folders/" in url or "drive.google.com/drive/u/0/folders/" in url:
-        return "folder", url
+        return "folder", url, file_name
+        
     # Extract file ID from regular shared links
     match_id = re.search(r"id=([a-zA-Z0-9-_]+)", url)
     if not match_id:
         match_id = re.search(r"/file/d/([a-zA-Z0-9-_]+)", url)
     if match_id:
         file_id = match_id.group(1)
-        # Usando a API de renderização de miniaturas (thumbnails) do Google Drive, que ignora telas de aviso e CORS, funcionando perfeitamente no Streamlit
-        return "image", f"https://drive.google.com/thumbnail?id={file_id}&sz=w1000"
+        return "image", f"https://drive.google.com/thumbnail?id={file_id}&sz=w1000", file_name
+        
     # Standard web link
     if url.startswith("http"):
-        return "image", url
-    return "invalid", url
+        return "image", url, file_name
+    return "invalid", url, file_name
 
 def process_links(links_str):
     if not isinstance(links_str, str) or pd.isna(links_str):
@@ -121,9 +145,9 @@ def process_links(links_str):
     
     processed = []
     for p in parts:
-        ptype, conv = get_direct_img_url(p)
+        ptype, conv, fname = get_direct_img_url(p)
         if ptype != "invalid":
-            processed.append({"type": ptype, "url": conv, "orig": p})
+            processed.append({"type": ptype, "url": conv, "file_name": fname, "orig": p})
     return processed
 
 def render_image_carousel(images_list, interval_ms=4000, height=350):
@@ -707,55 +731,98 @@ with tab_narr:
 # -------------------------------------------------------------
 with tab_photos:
     st.markdown("### 📸 Registro e Acompanhamento de Visitas do Coordenador de Área")
-    st.write("Esta seção é integrada em tempo real à planilha de respostas do formulário que os coordenadores utilizam nas visitas mensais de acompanhamento aos núcleos do PIBID.")
+    st.write("Selecione a instituição de ensino para consultar os registros qualitativos e o acervo fotográfico de cada visita de acompanhamento:")
     
-    if df_visitas.empty:
-        st.info("Nenhum registro de visita encontrado.")
-    else:
-        for idx, row in df_visitas.iterrows():
-            supervisor_name = row.get("Supervisor", "Supervisor não informado")
-            data_visita = row.get("Data_Visita", "Data não informada")
+    # Map each visit to its corresponding school based on supervisor name
+    escolas_visitas = {
+        "EEM Almirante Lamego": [],
+        "EEB Henrique Fontes": [],
+        "EEB João Teixeira Nunes": [],
+        "CEJA de Tubarão": [],
+        "EEB Senador Francisco Benjamin Gallotti": []
+    }
+    
+    for idx, row in df_visitas.iterrows():
+        sup = str(row.get("Supervisor", "")).lower().strip()
+        escola_pertencente = "Outros / Não Identificado"
+        
+        # Robust name mapping
+        if "adriano" in sup:
+            escola_pertencente = "EEM Almirante Lamego"
+        elif "lucas" in sup or "douglas" in sup:
+            escola_pertencente = "EEB Henrique Fontes"
+        elif "elisa" in sup or "mariléia" in sup or "marileia" in sup:
+            escola_pertencente = "EEB João Teixeira Nunes"
+        elif "fabiola" in sup or "fabíola" in sup:
+            escola_pertencente = "CEJA de Tubarão"
+        elif "luciana" in sup:
+            escola_pertencente = "EEB Senador Francisco Benjamin Gallotti"
             
-            with st.expander(f"🏫 Visita de Acompanhamento — Núcleo do(a) Supervisor(a) {supervisor_name} ({data_visita})"):
-                col_meta1, col_meta2 = st.columns(2)
-                with col_meta1:
-                    st.markdown(f"**Carimbo de Envio:** `{row.get('Carimbo', 'N/A')}`")
-                    st.markdown(f"**Email de Envio:** `{row.get('Email', 'N/A')}`")
-                with col_meta2:
-                    st.markdown(f"**Data Oficial da Visita:** `{data_visita}`")
+        if escola_pertencente != "Outros / Não Identificado":
+            escolas_visitas[escola_pertencente].append(row)
+            
+    escola_tabs_list = list(escolas_visitas.keys())
+    tab_esc_objs = st.tabs([f"🏢 {esc}" for esc in escola_tabs_list])
+    
+    for esc_idx, esc_name in enumerate(escola_tabs_list):
+        with tab_esc_objs[esc_idx]:
+            visitas_da_escola = escolas_visitas[esc_name]
+            if not visitas_da_escola:
+                st.info(f"Nenhum registro de visita encontrado para o núcleo {esc_name}.")
+            else:
+                st.success(f"Encontrado(s) {len(visitas_da_escola)} registro(s) de visita para esta escola parceira.")
                 
-                st.divider()
-                
-                # Check photos column
-                photos_col = row.get("Fotos", "")
-                processed_photos = process_links(photos_col)
-                
-                st.markdown("#### 📸 Acervo Fotográfico Anexado nesta Visita:")
-                if processed_photos:
-                    images_to_show = [p for p in processed_photos if p["type"] == "image"]
-                    folders_to_show = [p for p in processed_photos if p["type"] == "folder"]
+                # Show expander for each visit
+                for row_vis in visitas_da_escola:
+                    supervisor_name = row_vis.get("Supervisor", "Supervisor não informado")
+                    data_visita = row_vis.get("Data_Visita", "Data não informada")
                     
-                    # Display images
-                    if images_to_show:
-                        img_cols = st.columns(min(len(images_to_show), 3))
-                        for col_idx, img_info in enumerate(images_to_show):
-                            with img_cols[col_idx % len(img_cols)]:
-                                st.image(img_info["url"], use_container_width=True, caption=f"Foto Anexo {col_idx+1}")
-                    
-                    # Display folders
-                    if folders_to_show:
-                        for f_info in folders_to_show:
-                            st.warning(f"📂 Esta resposta contém um link para uma pasta do Google Drive: \n{f_info['url']}")
-                            st.link_button("Abrir Pasta Completa no Google Drive 🌐", f_info["url"])
-                else:
-                    st.info("Nenhum arquivo de imagem anexado nesta resposta de formulário.")
+                    with st.expander(f"📌 Visita de Acompanhamento — Supervisor(a) {supervisor_name} ({data_visita})"):
+                        col_meta1, col_meta2 = st.columns(2)
+                        with col_meta1:
+                            st.markdown(f"**Carimbo de Envio:** `{row_vis.get('Carimbo', 'N/A')}`")
+                            st.markdown(f"**Email de Envio:** `{row_vis.get('Email', 'N/A')}`")
+                        with col_meta2:
+                            st.markdown(f"**Data Oficial da Visita:** `{data_visita}`")
+                        
+                        st.divider()
+                        
+                        # Process and display photos
+                        photos_col = row_vis.get("Fotos", "")
+                        processed_photos = process_links(photos_col)
+                        
+                        st.markdown("#### 📸 Acervo Fotográfico:")
+                        if processed_photos:
+                            images_to_show = [p for p in processed_photos if p["type"] == "image"]
+                            folders_to_show = [p for p in processed_photos if p["type"] == "folder"]
+                            
+                            # Display images
+                            if images_to_show:
+                                if len(images_to_show) == 1:
+                                    img_info = images_to_show[0]
+                                    cap_name = clean_file_name(img_info.get("file_name", ""))
+                                    st.image(img_info["url"], use_container_width=True, caption=cap_name if cap_name else "Registro de Visita")
+                                else:
+                                    # Carousel for multiple photos
+                                    render_image_carousel(images_to_show, interval_ms=4000, height=380)
+                            
+                            # Display folders
+                            if folders_to_show:
+                                for f_info in folders_to_show:
+                                    f_name = clean_file_name(f_info.get("file_name", ""))
+                                    if not f_name:
+                                        f_name = "Pasta Completa de Fotos"
+                                    st.warning(f"📂 Esta resposta contém uma pasta vinculada: **{f_name}**")
+                                    st.link_button(f"Abrir {f_name} no Google Drive 🌐", f_info["url"])
+                        else:
+                            st.info("Nenhum arquivo de imagem anexado nesta resposta de formulário.")
 
 # -------------------------------------------------------------
-# TAB 3: THEORETICAL AND REFLECTIVE DIMENSIONS
+# TAB 3: THEORETICAL AND REFLECTIVE DIMENSIONS (High Density Academic Text)
 # -------------------------------------------------------------
 with tab_reflections:
-    st.markdown("### 🧠 Dimensões Formativas e Impacto Crítico do PIBID")
-    st.write("Análise qualitativa aprofundada baseada nas considerações e aportes teóricos encontrados nos relatórios de atividades oficiais de 2024-2026.")
+    st.markdown("### 🧠 Dimensões Formativas e Impacto Crítico do PIBID UNISUL")
+    st.write("Análise teórica, qualitativa e científica aprofundada baseada nas considerações pedagógicas e aportes teóricos encontrados nos relatórios de atividades oficiais de 2024-2026.")
     
     sub_tab1, sub_tab2, sub_tab3 = st.tabs([
         "📚 Formação de Professores (Prática Reflexiva)",
@@ -765,35 +832,85 @@ with tab_reflections:
     
     with sub_tab1:
         st.markdown("#### 👩‍🏫 A Articulação entre Teoria e Prática e a Formação Docente")
-        st.write("""
-        Os relatórios mostram que o PIBID é de suma importância para construir confiança na atuação e conforto com o ambiente escolar. 
-        Entre as atividades qualitativas reflexivas que geraram esse amadurecimento, destacam-se:
+        st.markdown("""
+        <div class='text-content'>
+        <b>1. A Práxis Pedagógica e a Inserção na Cultura Escolar:</b><br>
+        O PIBID UNISUL se estabelece como um espaço crucial para o desenvolvimento do perfil profissional de licenciandos das áreas de Letras, Pedagogia, História, Ciências Biológicas, Matemática e Educação Física. 
+        A inserção contínua no ecossistema escolar funciona como elemento redutor do nervosismo e do receio inicial de assumir a sala de aula, substituindo-os pelo desenvolvimento progressivo de habilidades de regência compartilhada, liderança didática, gestão de turmas e autoridade pedagógica. 
+        Essa transposição ativa permite que a teoria acadêmica encontre ressonância direta nas heterogeneidades e imprevisibilidades da escola pública básica.<br><br>
         
-        * **Memoriais Descritivos (Livro 'Infância' de Graciliano Ramos)**: Bolsistas escreveram relatos autobiográficos interligando suas próprias memórias escolares à obra do autor. Esse exercício estimulou a sensibilidade e a empatia para lidar com as realidades diversas de seus futuros alunos.
-        * **Participação nos Conselhos de Classe como Ouvintes**: IDs dos núcleos como Henrique Fontes acompanharam as dinâmicas de fechamento trimestral dos professores. A observação ativa proporcionou aos bolsistas uma visão realista e crítica sobre avaliação continuada, indisciplina, bullying e o uso do sistema digital de regência 'Professor Online'.
-        * **Encontros de Estudo Teórico**: Leituras orientadas sobre o fracasso escolar, interseccionalidade e a pedagogia freireana serviram de base para que as pibidianas planejassem suas ações de intervenção a partir das carências reais de cada instituição.
-        """)
+        <b>2. Memoriais Autobiográficos e a Estética da Recepção (Livro 'Infância' de Graciliano Ramos):</b><br>
+        Durante os recessos e férias escolares, os pibidianas dedicaram-se à leitura orientada da obra autobiográfica <i>'Infância'</i>, de Graciliano Ramos. 
+        Como atividade de amadurecimento subjetivo, os bolsistas foram convidados a redigir seus próprios memoriais descritivos, estabelecendo um paralelo direto entre suas próprias lembranças da infância escolar (como episódios de bullying, exclusão, acolhimento afetivo e superação) e as ricas passagens do autor. 
+        Essa metodologia reflexiva, partilhada em reuniões remotas com os supervisores, permitiu aos futuros professores resgatar sua própria história de constituição identitária e desenvolver uma sensibilidade apurada para lidar de forma empática e acolhedora com as trajetórias de vida e ritmos singulares de cada estudante.<br><br>
+        
+        <b>3. Conselho de Classe como Dispositivo de Formação Prática Crítica:</b><br>
+        Os relatórios documentam o Conselho de Classe como um dos mais potentes momentos qualitativos vivenciados pelos bolsistas na posição de ouvintes. 
+        Ao acompanhar o fechamento de notas, as dinâmicas de conselho e o preenchimento de ferramentas de gestão docente online (como o sistema 'Professor Online' de Santa Catarina), os IDs puderam confrontar as concepções de avaliação idealizadas com as demandas reais. 
+        Os relatórios registram anotações profundas dos bolsistas sobre as discussões de Conselho:
+        <ul>
+            <li>A necessidade crítica de ir além do fechamento de médias numéricas frias, defendendo a atribuição de notas de conselho a partir do esforço individual, do empenho e da evolução pedagógica do discente;</li>
+            <li>O combate ético a comentários depreciativos dirigidos a professores ingressantes ou a turmas rotuladas como desorganizadas, reforçando o compromisso com o encorajamento mútuo e a postura ética em reuniões docentes;</li>
+            <li>A análise do cenário escolar sob a ótica de múltiplos fatores, diagnosticando casos corriqueiros de sofrimento emocional, evasão e altas taxas de infrequência que exigem mediações que vão além da punição.</li>
+        </ul>
+        
+        <b>4. Planejamento Colaborativo e Grupos de Estudo:</b><br>
+        Semanalmente, reuniões remotas e presenciais estruturaram a intencionalidade pedagógica do projeto. 
+        Estudos teóricos em torno do fracasso escolar, da inclusão de minorias e de práticas de letramento críticos fundamentados na pedagogia de Paulo Freire embasaram cada plano de aula e sequência didática produzidos pelas equipes, conferindo rigor acadêmico e validade científica a cada ação executada.
+        </div>
+        """, unsafe_allow_html=True)
         
     with sub_tab2:
         st.markdown("#### ⚖️ Inclusão, Acolhimento e o Combate ao Bullying")
-        st.write("""
-        A dimensão humana e o acolhimento estão no centro do PIBID UNISUL. As ações foram planejadas e executadas para garantir ambientes seguros de aprendizagem:
+        st.markdown("""
+        <div class='text-content'>
+        <b>1. A Ação Preventiva do NEPRE e o Correio de Denúncias:</b><br>
+        O subprojeto <i>'Cuidar de Si e do Outro: Práticas de Acolhimento Escolar'</i>, inspirado nas diretrizes do NEPRE (Núcleo de Prevenção às Violências Escolares), atuou na prevenção de violências e acolhimento nas escolas parceiras. 
+        Como ação central, foi implementada a caixa física do <b>'Correio de Denúncias'</b>, confeccionada pelos próprios IDs e instalada de forma visível ao lado de QR Codes nas salas de aula para acesso a questionários anônimos pelo celular. 
+        As caixas, abertas semanalmente, permitiram aos estudantes relatar casos anônimos de abusos de forma segura e protegida. 
+        A triagem colaborativa entre IDs, orientadores e supervisores garantiu encaminhamentos imediatos e confidenciais, mitigando episódios de bullying e promovendo um ambiente de bem-estar psicossocial coletivo.<br><br>
         
-        * **Xadrez na Escola no Contraturno (Espaço do AEE)**: Ofereceu suporte aos alunos com necessidades educacionais especiais no Atendimento Educacional Especializado (AEE), desenvolvendo o foco, as competências socioemocionais e o raciocínio lógico.
-        * **Cuidar de Si e do Outro (NEPRE)**: O 'Correio de Denúncias' contra Bullying permitiu aos alunos expressarem relatos de sofrimento de forma anônima. Os bolsistas, orientadora e supervisor analisavam cada caso de forma confidencial para dar o devido encaminhamento pedagógico protetivo.
-        * **Conscientização em Datas Sensíveis**: Oficinas e apresentações sobre o Dia Internacional da Mulher e a gincana educativa contra a exploração infantil 'Maio Laranja' debateram e esclareceram os sinais de relacionamentos abusivos em sala de aula.
-        * **Alfabetização e Literatura no CEJA**: No Centro de Educação de Jovens e Adultos (CEJA), os núcleos aplicaram a escuta atenta aos alunos da EJA, muitos em fase de alfabetização, transformando a biblioteca escolar num ambiente afetuoso de pertencimento.
-        """)
+        <b>2. Abordagem de Temas Sociais Sensíveis e Campanhas de Conscientização:</b><br>
+        O PIBID demonstrou forte engajamento ético e social ao transpor temas altamente complexos para dinâmicas escolares adequadas à idade. 
+        Nas semanas de combate à violência contra a mulher, os bolsistas conduziram palestras e dinâmicas interativas sobre as relações de respeito e os sinais silenciosos de abusos emocionais ('Quem ama não controla'). 
+        Na campanha do <b>Maio Laranja</b>, os bolsistas organizaram os ensaios da coreografia da música <i>'Baião da Proteção'</i>, abordando ativamente a proteção dos direitos e a conscientização de crianças e adolescentes contra o abuso e a exploração sexual infantil.<br><br>
+        
+        <b>3. O Tabuleiro de Xadrez como Ponte para a Inclusão (AEE):</b><br>
+        O projeto <i>'Xadrez na Escola'</i> estabeleceu-se como um polo de acolhimento na sala de Atendimento Educacional Especializado (AEE) nas manhãs de sexta-feira. 
+        Planejado em estreita parceria com os professores do AEE, as aulas de contraturno acolheram estudantes de todas as faixas etárias, em especial alunos com transtornos globais do desenvolvimento ou deficiências. 
+        A metodologia lúdica do xadrez aproximou de forma harmônica e igualitária alunos do ensino regular e da educação especial, promovendo habilidades de raciocínio estratégico, paciência, concentração, resiliência diante do erro e respeito ao oponente.<br><br>
+        
+        <b>4. Educação para as Relações Étnico-Raciais (ERER):</b><br>
+        O fomento à diversidade cultural e ao combate ao racismo estrutural foi sistematizado em mostras culturais e exposições artísticas, como o <b>Projeto ERER</b> no João Teixeira Nunes. 
+        Os estudantes dos anos finais produziram crônicas críticas embasadas no livro <i>'A Memória das Coisas'</i> e analisaram o papel simbólico e ritualístico de máscaras africanas, confeccionando suas próprias máscaras tridimensionais, aproximando os estudantes do reconhecimento histórico e estético da ancestralidade afro-brasileira de forma reflexiva e inclusiva.
+        </div>
+        """, unsafe_allow_html=True)
         
     with sub_tab3:
         st.markdown("#### 🎯 Desafios Pedagógicos de Infraestrutura e Soluções Criativas")
-        st.write("""
-        Os relatórios registram de forma realista que o ambiente escolar apresenta dificuldades concretas, cuja superação fortalece o perfil profissional dos licenciandos:
+        st.markdown("""
+        <div class='text-content'>
+        <b>1. Superação da Escassez de Recursos Materiais e Tecnologia Ativa:</b><br>
+        Os relatórios pibidianos expõem de forma honesta e documentada as fragilidades estruturais recorrentes nas escolas públicas brasileiras (falta de quadras cobertas, laboratórios subutilizados ou bibliotecas outrora ociosas). 
+        Um dos desafios mais contundentes relatados no Gallotti consistiu na severa escassez de livros físicos idênticos, como a obra <i>'Coraline'</i>, impossibilitando que a turma acompanhasse a leitura de forma simultânea. 
+        Como estratégia inovadora, as bolsistas contornaram essa limitação disponibilizando o texto em formato PDF licenciado nos tablets da escola, estruturando círculos de leitura compartilhada em duplas e integrando-os à modelagem tridimensional de maquetes de biscuit e argila no laboratório maker de artes.<br><br>
         
-        * **Limitação de Acervo Físico**: No projeto *Mundo dos Sonhos (Coraline)* no Gallotti, a quantidade muito pequena de livros físicos obrigou os bolsistas a organizarem leituras compartilhadas em duplas e a criarem capítulos digitalizados nos tablets da escola.
-        * **Canso Extremo e Evasão na EJA**: Estudantes adultos que chegam à escola após longas jornadas de trabalho enfrentam esgotamento físico e mental. As pibidianas contornaram esse desafio desenvolvendo estratégias afetivas envolvendo lanches coletivos e cafés literários.
-        * **Gestão do Tempo e Calendário**: Mudanças de cronograma, feriados e readequações curriculares demandaram dos bolsistas flexibilidade constante para replanejar suas ações em conjunto com a gestão escolar.
-        """)
+        <b>2. Sensibilidade Metodológica e Acolhimento Humano na EJA (CEJA de Tubarão):</b><br>
+        As pibidianas que atuaram no CEJA de Tubarão depararam-se com a complexa e sensível realidade da Educação de Jovens e Adultos (EJA) nas turmas de nivelamento. 
+        Muitos estudantes adultos e idosos, em fase inicial de alfabetização, chegam à escola no período noturno profundamente fatigados após longas jornadas de trabalho pesado, o que gera alto índice de faltas e dificuldades para manter o foco na leitura convencional. 
+        A equipe superou esse obstáculo implementando a <b>pedagogia do afeto e da escuta freireana</b>. 
+        Foram criadas oficinas criativas envolvendo lanches coletivos, cafés literários e momentos de contação de histórias mediadas por imagens e desenhos. 
+        Um dos destaques foi a oficina baseada nas poesias de Manoel de Barros, culminando na escrita de sextilhas de cordéis e gravação de podcasts, aproximando esses estudantes trabalhadores do universo do letramento crítico sem causar constrangimento pedagógico.<br><br>
+        
+        <b>3. Adaptação Dinâmica ao Tempo e Reorganização Curricular:</b><br>
+        Com a nova reforma e reorganização da matriz curricular na EJA em 2026, os estudantes passaram a frequentar a escola presencialmente apenas três vezes por semana, reduzindo significativamente o tempo pedagógico disponível para as intervenções. 
+        Esse limitador exigiu dos bolsistas habilidades apuradas de replanejamento ágil, desenvolvendo sequências didáticas objetivas e integradoras de alto aproveitamento, como o reconto coletivo e o uso de recursos de lousa digital e lúdicos que garantiram a participação de alunos em diferentes níveis de aprendizagem.<br><br>
+        
+        <b>4. Sinergia com o Calendário e Atividades Comunitárias:</b><br>
+        Alterações de cronograma devido a paradas pedagógicas, mostras escolares (Feira do Conhecimento), festas tradicionais e simpósios universitários (como o SIMFOP) foram convertidos pelas equipes do PIBID em ricas oportunidades de imersão social. 
+        As equipes integraram-se de forma ativa à comunidade local, mediando brincadeiras gamificadas no pátio e socializando os resultados de suas pesquisas em simpósios científicos de nível nacional, consolidando a ponte inquebrável entre a universidade (UNISUL) e a comunidade escolar básica.
+        </div>
+        """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------
 # TAB 4: PALAVRA-CHAVE SEARCH IN NARRATIVES
