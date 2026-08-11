@@ -776,16 +776,17 @@ st.sidebar.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-st.sidebar.title("🔗 Conexão Google Sheets")
-gs_url = st.sidebar.text_input(
-    "Insira o Link Compartilhado da sua Planilha do Google Sheets:",
-    placeholder="https://docs.google.com/spreadsheets/d/..."
-)
+# Hardcoded Google Sheets URL (Opção 1: Ocultação Total para máxima segurança)
+gs_url = "https://docs.google.com/spreadsheets/d/1wjnzq6BABEZptZtcfESNZqZ7LV8qP966N5AFUscqwuA/edit?usp=drive_link"
 
-# Load datasets
-df_narrativas, df_visitas, data_source_info = load_data(gs_url if gs_url else None)
+# Load datasets using the secure hardcoded URL
+df_narrativas, df_visitas, data_source_info = load_data(gs_url)
 
-st.sidebar.markdown(f"**Fonte de Dados Ativa:**\n`{data_source_info}`")
+st.sidebar.markdown("""
+<div style='background-color:#E2EFDA; color:#375623; padding:10px; border-radius:5px; text-align:center; font-family:"Calibri",sans-serif; font-size:0.85rem; font-weight:bold; border: 1px solid #C6E0B4; margin-bottom: 15px;'>
+    🟢 Conectado ao Banco de Dados Online (Seguro)
+</div>
+""", unsafe_allow_html=True)
 
 st.sidebar.divider()
 st.sidebar.title("🎯 Filtros Narrativos")
