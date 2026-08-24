@@ -3,10 +3,12 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import re
+import json
+import streamlit.components.v1 as components
 
 # Set page config
 st.set_page_config(
-    page_title="PIBID UNISUL - Portal de Vivências Qualitativas",
+    page_title="PIBID UNISUL - Portal de Experiências Qualitativas",
     page_icon="🏫",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -15,343 +17,56 @@ st.set_page_config(
 # Custom Styling (Corporate Blue and elegant qualitative theme)
 st.markdown("""
 <style>
-    .main-title {
-        color: #1F497D;
-        font-family: 'Calibri', sans-serif;
-        font-weight: bold;
-        font-size: 2.5rem;
-        margin-bottom: 0.2rem;
-    }
-    .subtitle {
-        color: #595959;
-        font-family: 'Calibri', sans-serif;
-        font-size: 1.1rem;
-        margin-bottom: 2rem;
-    }
-    .qualitative-card {
-        background-color: #F8F9FA;
-        border-left: 5px solid #1F497D;
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        box-shadow: 1px 1px 5px rgba(0,0,0,0.05);
-    }
-    .card-header {
-        font-size: 1.3rem;
-        font-weight: bold;
-        color: #1F497D;
-        margin-bottom: 0.5rem;
-    }
-    .badge-escola {
-        background-color: #DCE6F1;
-        color: #1F497D;
-        padding: 0.25rem 0.6rem;
-        border-radius: 12px;
-        font-size: 0.8rem;
-        font-weight: bold;
-        margin-right: 0.5rem;
-    }
-    .badge-supervisor {
-        background-color: #E2EFDA;
-        color: #375623;
-        padding: 0.25rem 0.6rem;
-        border-radius: 12px;
-        font-size: 0.8rem;
-        font-weight: bold;
-        margin-right: 0.5rem;
-    }
-    .badge-periodo {
-        background-color: #FFF2CC;
-        color: #7F6000;
-        padding: 0.25rem 0.6rem;
-        border-radius: 12px;
-        font-size: 0.8rem;
-        font-weight: bold;
-    }
-    .section-title {
-        color: #1F497D;
-        border-bottom: 2px solid #DCE6F1;
-        padding-bottom: 0.3rem;
-        margin-top: 1.5rem;
-        margin-bottom: 0.8rem;
-        font-weight: bold;
-        font-size: 1.1rem;
-    }
-    .text-content {
-        font-size: 0.95rem;
-        line-height: 1.6;
-        color: #333333;
-        text-align: justify;
-    }
+    .main-title { color: #1F497D; font-family: 'Calibri', sans-serif; font-weight: bold; font-size: 2.5rem; margin-bottom: 0.2rem; }
+    .subtitle { color: #595959; font-family: 'Calibri', sans-serif; font-size: 1.1rem; margin-bottom: 2rem; }
+    .qualitative-card { background-color: #F8F9FA; border-left: 5px solid #1F497D; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 1px 1px 5px rgba(0,0,0,0.05); }
+    .card-header { font-size: 1.3rem; font-weight: bold; color: #1F497D; margin-bottom: 0.5rem; }
+    .badge-escola { background-color: #DCE6F1; color: #1F497D; padding: 0.25rem 0.6rem; border-radius: 12px; font-size: 0.8rem; font-weight: bold; margin-right: 0.5rem; }
+    .badge-supervisor { background-color: #E2EFDA; color: #375623; padding: 0.25rem 0.6rem; border-radius: 12px; font-size: 0.8rem; font-weight: bold; margin-right: 0.5rem; }
+    .badge-periodo { background-color: #FFF2CC; color: #7F6000; padding: 0.25rem 0.6rem; border-radius: 12px; font-size: 0.8rem; font-weight: bold; }
+    .section-title { color: #1F497D; border-bottom: 2px solid #DCE6F1; padding-bottom: 0.3rem; margin-top: 1.5rem; margin-bottom: 0.8rem; font-weight: bold; font-size: 1.1rem; }
+    .text-content { font-size: 0.95rem; line-height: 1.6; color: #333333; text-align: justify; }
 </style>
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# IMAGE CONVERSION UTILITIES (API-Driven Thumbnail Renderer)
+# IMAGE CONVERSION UTILITIES
 # -------------------------------------------------------------
 def clean_file_name(name):
-    if not name:
-        return ""
-    # Remove file extension
+    if not name: return ""
     name = re.sub(r"\.[a-zA-Z0-9]+$", "", name)
-    # Remove dates in format DD/MM/YYYY, DD-MM-YYYY, DD_MM_YYYY, YYYY-MM-DD, or similar patterns
     name = re.sub(r"[-_]?\d{2,4}[-_\/.]\d{2}[-_\/.]\d{2,4}", "", name)
-    # Remove 4 digit years (e.g., 2025, 2026)
     name = re.sub(r"[-_]?\d{4}", "", name)
-    # Clean underscores, dashes, and extra spaces
     name = name.replace("_", " ").replace("-", " ").strip()
-    # capitalize words
     name = " ".join([w.capitalize() for w in name.split()])
     return name
 
 def get_direct_img_url(url):
     url = url.strip()
-    if not url:
-        return "invalid", "", ""
-    
-    # Extract file name from parentheses if present (common in Google Forms file uploads)
+    if not url: return "invalid", "", ""
     file_name = ""
     match_paren = re.search(r"\s*\(([^)]+)\)", url)
     if match_paren:
         file_name = match_paren.group(1)
         url = re.sub(r"\s*\([^)]+\)", "", url).strip()
-        
-    # Check if folder link
     if "drive.google.com/drive/folders/" in url or "drive.google.com/drive/u/0/folders/" in url:
         return "folder", url, file_name
-        
-    # Extract file ID from regular shared links
     match_id = re.search(r"id=([a-zA-Z0-9-_]+)", url)
-    if not match_id:
-        match_id = re.search(r"/file/d/([a-zA-Z0-9-_]+)", url)
-    if match_id:
-        file_id = match_id.group(1)
-        return "image", f"https://drive.google.com/thumbnail?id={file_id}&sz=w1000", file_name
-        
-    # Standard web link
-    if url.startswith("http"):
-        return "image", url, file_name
+    if not match_id: match_id = re.search(r"/file/d/([a-zA-Z0-9-_]+)", url)
+    if match_id: return "image", f"https://drive.google.com/thumbnail?id={match_id.group(1)}&sz=w1000", file_name
+    if url.startswith("http"): return "image", url, file_name
     return "invalid", url, file_name
 
 def process_links(links_str):
-    if not isinstance(links_str, str) or pd.isna(links_str):
-        return []
-    parts = []
-    # Google Sheet lists are usually separated by commas or spaces
-    if "," in links_str:
-        parts = [p.strip() for p in links_str.split(",") if p.strip()]
-    else:
-        parts = [p.strip() for p in links_str.split() if p.strip()]
-    
+    if not isinstance(links_str, str) or pd.isna(links_str): return []
+    parts = [p.strip() for p in (links_str.split(",") if "," in links_str else links_str.split()) if p.strip()]
     processed = []
     for p in parts:
         ptype, conv, fname = get_direct_img_url(p)
-        if ptype != "invalid":
-            processed.append({"type": ptype, "url": conv, "file_name": fname, "orig": p})
+        if ptype != "invalid": processed.append({"type": ptype, "url": conv, "file_name": fname, "orig": p})
     return processed
 
-def identify_supervisor_and_school(row):
-    email = str(row.get("Email", "")).lower().strip()
-    sup = str(row.get("Supervisor", "")).lower().strip()
-    fotos_str = str(row.get("Fotos", ""))
-    
-    # Adriano Oriano Lamego photos mapping override
-    adriano_ids = {
-        "1RM3AUkqIsJKyG4KuyxG8-ExAX8KBln1R", "11bNrw28LSgYdz4T5-KLkDIPez2Ex9qv_",
-        "1iRQ9L99AKJmSSwfCutoK0oxPgBmzxv6h", "1FOFdEcZYZiGPGZaxJE-J5GSsspoE61h5",
-        "1zw_r8WJ4TvbVU2DrdIlrqzv9cRz71pRm", "19qqygu0GoY4blnJcBuh97zozBq-6LdKo",
-        "1V0Oc75y4XOTbjAOAG5-jvg-CYd1CmrLd", "1ZjFwf2SeADmQ8QW9nGilNe6ylecoQmke",
-        "1xsPNKDgAGxGR7AAAlcmlZyX8iYqW3VWB", "1Gq2FEyyK0PFqz0UVZl6V67TzqEuWsiLw",
-        "1tNDIfE_LP2i9VE6fLKd6G5zBp8e1v0Ld", "1FsAlz5FTr6OgnSzoa7viUfX3215d-t_T",
-        "1P4Q5BhcHSByCkuyY_YykIxQuvXK3Z3SR", "1lxxx_t12QAg0xaV5OPlRhHqlkdYlBol2",
-        "1DmHNaqdvG9BOGvjW3VFIxcIp5P8onp3P", "1dK0j3-0CqZ0pBF-ay-2n-HCNrgeq02Gt",
-        "1-nRUsN3SPgLsGZPQOA2mZqTUj2iNe3AP", "1Nl8GwWq4Ve8huTLsHfJ2Wz75OoXhRJ_Z",
-        "10CdtR0T8X6WwK61IEsNNrBYW_YhobBdo", "1sIBrCfQUpT66dhvmaRNOMjG_NW-UeVia",
-        "1zXdS_-FXTR4Jc2vtcNbOLSfvT-2b8YmN", "1eHDcVSCDEh8-7XkuQhFslvSdrH8ECmPT",
-        "1TbXHX7BadJB11WLIbR_bYe15xVbIwSrA", "1xNTyQjWekjLIgMD-ycIZVADxfLUL2Yl-",
-        "1wj6YaDoBHMSR4amxHlee1MLx02IGzdPy", "1o2Hzu5Q2VntjWiOC4sYf_jY_85asm-ez",
-        "13CRO6MGmONSpsKyyabpBvw1un3viCWZl", "16x5dP6FR-gj0qnx3OnoJJiR3Kj3QAA3A",
-        "1JwtiNedpeg-TrMTbjvWtuNn6p0_12spB", "1-xyC17cDChq9WP8-5berxuNEhgshwjqQ",
-        "1gKNVcAHlOA5Tb9VjfVmi-WfRfL24r4yO", "19V55VzeHXKgc2PhCsF0ErRqmGlk3ZuIn",
-        "15wuwg3tUv1l0N23hEWZHk8T61FHyy1xF", "1VIqrDsUB5EH14FDWU2-JH3FzipSt6Yp4",
-        "1UER65qeDt4TjuYYk5Ei9H6h4Gwdy6j0B", "1raBF5_n-NIb3PJK-vUY1EXoUCVQcV2W7",
-        "1g5rVfLPjob_hOa8nQ4vWRBlmEJyTRcho", "1nxbC1u5BV5lVJvIQEFM2pLblqERY9ZB-",
-        "1vXh0dNn5izXmJtUaXbYkJqr3cVOvIFFg", "1fwheOjFa_aNej9ascd56OkINukZ69LrWT",
-        "13HQGJV_BA9TvgocnfSOhiu7DtNQ4Leph", "1YgWBmGnvf3j8Dqwf7NkGQHFhvUmREs-y",
-        "15QxVRKWSiwRZu5N7sZydYq1nSjsGTVRM", "1rjDMKKrpgRNEoXUbdPEcHQg_mvCK2ttI",
-        "15nxKqupuFE-vsHIzaFgsvwl6KDB1CFl-", "1cmrNm0t7E_SGNxDdLaRK3eOrIZftHfKW",
-        "1moqBYt3UmmcvfMaiDwP7q-5akfToA5KK", "1FhgAwlGJlagvLSnWyA9FPd4krr14ChsV",
-        "14E1b3P0KVTS6qefGDOrioucTtvvOuOxK", "13WK2_caHOICkGP-5ycTHIwCPqfVWrT9W",
-        "1oWYycGnDU_PgU5iyFR3UT9Q_BA5JZoyQ", "1cKS6IKWYTRebWLx9VyS9K6uwdRVVdxuj",
-        "13J2e5t_O_FmrFz-idOBD9K1I4b5Gvhxw", "1vM5PLgPDYWk7EzwTXAtv29oxnJDob1yZ",
-        "1s06yT-PtGNF58fowqnZTT6021OvrkaeV", "1jBYpx5icrJWR-mqzLkXXbQdHPEJaPimZ",
-        "1Saw_Sge0R3CSTp7ZL5g-H_NkRL6p4gqk", "1MdstYwYqYGho0N5D7Uo9T8qK3PqFPVNB",
-        "1gTs6xfnBgz_41eCi38q7GFiDPL-uzrKK", "1Gsiaw70E9ObLSYUkG1sj77b3nso7Ozhw",
-        "1gGwZYUNHpm_IdlInPlhTmrXgcPJpOdbx", "1rwl6V8vKrYLxLmwZSg_2MryK8ts0D0AC",
-        "1iCUI_uZ8Inzx9CQs9eFIZraAG-FO2T1A", "1XVxBlCf61iVSp6fLn1yidrEMSeKkC14y",
-        "1AdGya3ZSW701nXG2-tlRi2_EUywu-CAb", "11VxCVR_3mRlsC1-aCN7j8GQ6Vau5Og46",
-        "18nbWrezYJ44RFIbqPLw8MLHx-yVUHrxd", "1BJpRXGpWmVHuMN0ROys2XSPDX5t5fQ8L",
-        "14slPaZUn2SWZjWR_hz7uyship_hf4eBu", "1tG1tM_QjJBLLyGVQGrPlUBX1aB0kxT5L",
-        "1aSYxNDq7ZzbiB-glYc36VMRTu4IDu4MO", "1-pX25yRx9T2mWQ1Tyqjxd-4KW90XyoK-",
-        "136lEcZZHrjrMzypJGPlW_CJxs1QApBrj", "1xoF7Te-H0b9xMLUpcrEuWDqdyytvId4F",
-        "1NuLzb3hsBaz5HGfFXlI4hSqv73AbKWrq", "1Xz6eP-8LC_mxE4FSs5LgqKevEOrHcAzf",
-        "1Iott6VGltCIv9b1jFpi7TPppOiDoI_VK", "1Kr8SAqctsu_uyrH-_fUPWhoYoKLwRJB0"
-    }
-    for p_id in adriano_ids:
-        if p_id in fotos_str:
-            return "Adriano da Silva Oriano Junior", "EEM Almirante Lamego"
-            
-    # Elisa Vieira JTN photos override
-    elisa_ids = {
-        "19dYUF5kAD0950iinqr5rulDvwIIHfRyc", "1C72WpqlmGpYiDslS9wMCKqLtNORM2njb",
-        "1rBVObCfSfHsdN3FnacbgvX1CDgQ6AXu3", "1rYPxIAk3o-lNWCploLXsGjbzqJyNcVYz",
-        "12NZC6t2EDwBC18ifkRECIuVGL32Jp-4W", "1bZKVL2mtGym_0z9fsriDDUnoOPoXZRmo",
-        "1sjDFSkVcbRf-MCgja8EwQpMETFe4SeGj", "1xpuCLbaW3Mvu24_d3_pWIRWqzhYJkAWh",
-        "1KbaozevZZ3kOXYKFFSD6OO1eCgMUfskG", "1nMEiZ3MVHTG1gPhzmcDcNj8jlLlTGF5M",
-        "1nxmAcF6yDwwVgCBbfVwWSRhEq4j-PIXT", "1sSSFb3lI-nJtmxnl7IP_urTMYz6SsMJW",
-        "124wxgrT4IBak4AStd39C_dDmpljt7OmT", "1mMBi951Ngck24gKVksJKyG4KuyxG8-ez",
-        "1h0Jfs_nbkc6nmIVAiPfI_xpISsSqgulh", "1QLCvjwlfl14v5qhGantCGScEt3dRtQJ6",
-        "1qAZ0Aw8IDJRpcPRiU4lTIsIqItUzmBSx", "1WH0FUP5J8dQW-jzecazp06wrms02BHGf",
-        "1F_a88Vblz7rNRc7N8zlR3iAs8sTYuUGl", "1GPGjZDi_YgZHsRiu9B4B6GBagFSRY8GY",
-        "1bD4X3tif99NX14JmdFdlyw4Qh4ULrF9f", "1tIWW07pDa_FPvXx9tyjyxFJWnh2x9lSX",
-        "1oZURMppt7pFNNNBEKv11e1jUjmiSbx0Q", "1RqI9G-wCvscAouluVT4CMQ0aZ0sZYfP7",
-        "1n9_IfjlOR7OV0Apf0_qQRQYDuvEMtICM", "1guuDuymgnEtzeg2YxT11cMfwuqZLjB-q",
-        "11eNhdSB3Vkmz7z8-JXqnlPUNUMu6TJ4D", "1NUMAbckbIr5Gf8Z7gkMMpZjKjSj5Fhrg",
-        "11YOSgvF35tyXjJU98ODXF-JC4rDbirjh", "1hAVHczxB9VY5D6FUL0_1zSquUrZQm4R8",
-        "1UoAVX6e9NKORyAopwasxA4TaadAwGb0y", "19S-Kyfcsm4boZNaQITR-Yb1i_IPgx8ye",
-        "1akAUE_WNECOHgOXSYYUr92_SACI-bwQZ", "1YYfuRq9ZQKnOrSATxVzu76bwES41v-2e",
-        "1dipgVxT6GhhAz_GXuEWOT-nBpDS88kDn", "1jNS_PBZFxLO1jETa_gL5dvRFtC6M4Uit",
-        "1AJ0lMO73QYq-pdkYe6iPYtzudxOmXin9", "1lnvjdz4tp1MU1rmq1cqOPwLIYn4DQ7lR",
-        "1-JtulNsvLDbDeqlttKBAfBXcIGYVI9o5", "1XFVqhnEwYDa0bTNM7ahmEJpvbfM5ntS",
-        "1yobuHYfaUWtVBFd1EnWx6A4ZkXjF8WYj", "12yCjRGmlOfEcSkTUP_mfKSKdHMVdRRTI",
-        "12I8Sqzr2Nbh1K1B5oqtrGYyU2zP9u1QPV", "1qABEE8smxzNcTmtW5ivh4Ug5yxtCBPE0",
-        "1uc76sBz6v7KBgA_CLP43f1vODOF-g0U-", "1mqVACKiScIdrqc-1sfG3rdcTlPu0wYfO",
-        "1Mgs1vdbf3fACosON8eQcgVpmRQOa1gHZ", "1TAvpIguck2MjduhjafLqtlkuD9cCi7zr",
-        "1gi_UFORu_FWnqyvGfXRGtwx4A9nMypK9", "1LYDNUEuUeGycjeIxjhb_YelwISNcVuP5"
-    }
-    for p_id in elisa_ids:
-        if p_id in fotos_str:
-            return "Elisa Vieira da Silva Soares", "EEB João Teixeira Nunes"
-
-    # Lucas Zamparetti Henrique Fontes photos override
-    lucas_ids = {
-        "1DQIYH7c3FMhDFYyRlfffzgaY3NvQGzcC", "1ltDHSZa9Vh-b07l8L6u4945E6uJr9KRP",
-        "1E6iJSBFkGARUF0L-m311ekeuSxgowPiW", "12uxfu9KxBg2ej9aNU901BMiqhN_T2Gnf",
-        "1EvHQgGdd0gdANWT98wIg1J28SRI4kQpS"
-    }
-    for p_id in lucas_ids:
-        if p_id in fotos_str:
-            return "Lucas Zamparetti Oliveira", "EEB Henrique Fontes"
-            
-    # Luciana Fernandes Gallotti photos override
-    luciana_ids = {
-        "1oJxomWUxnFyoOhUe0dgmQXxn4517bXTu", "1AoiFjOhROn45Rcb6GMut8bIj0BD7Le4r",
-        "15Dio2hZrI7gWtKZdkE_kggnbP9u1QDRd", "1CSqNhzJE_nmXFG0c07OZLELr-eWFx-35",
-        "194jGlfxKnzYeSvp2CWN8ehpd95LkgjQy", "15PTnW0J1etX-ZBrY8TR7Kjx8_9pKzjfH",
-        "1vpu1FtPmDgFb7kpewiKS1lHAiPrM2MWf", "1LOuemB76xuCGkxaQtAeRf2-F69uEo2-Y",
-        "13xDvHg3Q4YRwc3bmlHs9aVA0cRtmm-l7", "10XEM_e4wzM0d9qxMKxi7UfDIlPDoWq5R",
-        "1Nuq1LLCBd_1Xn2mMU93jhb3SZ-uLGyMp", "1gHxk0ulrp1pxTG76ewdzGKRq1MT64t2I",
-        "1FtQbuU-K-_xvZ7s22Yo0YzVXqZ5AGZ0a", "1QxhaUVQXMXX7fvfXfqIm4pj6s0rwC77k",
-        "1UwDKBzoOkc6m7PUs-GXqKduyoHXKu1NU", "1xIUP9dza6-a96TSpvuIY88Zu7nIuFEqD",
-        "1_a0jGi8Y6AoOLU6iAHxfScLXsjLuK85J", "1RABdirUIfif1jMIg3clM3XBl-3G7tkga",
-        "1gL69mr7JK_HQxZvf6f02_olTxnptswQb", "1QEDJkZnqNw3wht0kFof_5hgfoUTGtQq2",
-        "1knBeysh2qs39exnsrFNzWvn0-UZbWQt3", "1qAbhpbYHFWnKJ9psKhUxFjVCozpmh2b9",
-        "1SrFNOsZAHm6DooPjfYbXinKf7VqfxUlX", "1MnEPEnq-hH3mGcti84lhgv6ySRpxVVS2",
-        "1HgaNseQyho7AHbELG25doWLXb5TZLNft", "1vo87sE4EPKITTVT0DAg25O-AKbV_mpWl",
-        "1BaqAe3IVrQ-Hig_RIYwpYZ6r4l1i6m6u", "13rCcC_SUgjbb8I0Y1Rk_c84hJUcdTiT6",
-        "1ChhM3TjkunNTM4PYMS2GoDRlpkNdtdPE", "1-EEH6j3KXLEtD1qLe7zuOq_4QIkznEAF",
-        "1v2guYCJqsWBWvpwS0A_X0RS-B8GAH6kh", "19hG2P69o0pRaVkJBcpAnzdR5o0xHyEbv",
-        "1zkgQOBo-x82a5UIn7lD4GDidWU_u9ZzG"
-    }
-    for p_id in luciana_ids:
-        if p_id in fotos_str:
-            return "Luciana Fernandes", "EEB Senador Francisco Benjamin Gallotti"
-            
-    # Douglas Bardini Henrique Fontes photos override
-    douglas_ids = {
-        "17GR6mah4x2f-cnfVfSxe6e34whG9P-kl", "15nl7qU7XOsW6Hu1TrGXdNsltrfAPISBc",
-        "1ETTjIdg4a5fwWEM9g2MDROOg2ALW5dJv", "1JON_eMOuCkeufnmp_Ut96iti2U8wuOzY",
-        "1LZ4yAtak7AXNiQw_09o_Ue662aRCczmA", "1tcA2RmkUL6HdPuwKc-_csL-wor7z5_Mw",
-        "1cQxxerWc1pkVdDak0WdAmyCI2S5kxpm5", "1y96O5Q8p7CPOjVvYghnmVKHeuEcUmkXK",
-        "177pIQR5suhevK5ww_7jdCiA8DcFgxNon", "12OjDJDkTe1RNbkz-PVkWxSgpKkgXKCXP",
-        "1GVo-LBNYUodDFfHm1S05EiMwl3za_hs_", "1oxc_nkMFdK-wEeCiUjhxDETTnZKBQ7UK",
-        "1HdAGytC7l2TtJDatGqp25_VrPL8qjq9b", "1jdTWYM_EASlCVps_C4Cb7R2_Q51ZFRDh",
-        "1D7d7GTcyLjOGBah5gZQzQO8Jqglg3EFk", "1D8t74SvzkKb_59ZO0xYfFGcwvUU98PG-",
-        "1PRmpFerq1K4K3Y32cPXH67C3ZjM0gZki", "1X9OSvrNur1P4y958eWLXqKNPErJNd8yH"
-    }
-    for p_id in douglas_ids:
-        if p_id in fotos_str:
-            return "Douglas Bardini Silveira", "EEB Henrique Fontes"
-
-    # Fabíola Savi CEJA photos override
-    fabiola_ids = {
-        "13zXCE4b419p9Ol89qUXOBMvbVlBs4t4k", "1aq0WuGWaZiGsBqLD5lwl-1Ps1MXDJx8y",
-        "1apedv_mkHqti_wM04GxAUIsRWZfnjKgt", "1nXdULjOseTOYBX2HoYqLV5fPiCynmyc9",
-        "1p0V5B5FbeHX1li5SJmXmKkJsKdOy5Dgw", "1-9NUWlyZ5mopBE4bFamLd85UshipqZr4",
-        "1vhaMKqf-GvqbGPsvO09o88mMv90QRllK", "1LxXME06C0gkRfMPoprDEihmHqfidK8iF",
-        "1f13AjxfLPGjGA9US39T5V6ntp_rsATvE", "1cLjk9Fi_hNyvsXLJSnWuvZjZZOY5qn5L",
-        "17MuyVhMprCGGxnDg9dybJthz62gclQGE", "1QtB9MG-M7p0AvGE71jKPwaw3PiSdjSg7",
-        "1CFsIzVczDUo60VYlFgivjnEd95YIsroc", "1CyDSgzN5FVLWSVePu5tetjBBnywG0DJP"
-    }
-    for p_id in fabiola_ids:
-        if p_id in fotos_str:
-            return "Fabíola Medeiros Savi", "CEJA de Tubarão"
-
-    # Mariléia Teixeira JTN photos override
-    marileia_ids = {
-        "15VvZnzwcV8KtoudaaYc4nMWIqF1GRNVJ", "1UkSfVUXTE9DImWxXObbuGFWCV5xBmfZu",
-        "1RiVXBdAREzTHAaJXWvAU4-SzwdFcarVS", "13jKO35Oo89WnprMbyAd_HhzTyl2eoVEg",
-        "1rQsP6HoOn7-BEC0jFuIGSTAlyLssur56", "14T2kPbwz4Sryzu-OkRLCPtBX-3-U9BCc",
-        "1y-pGe9h7B0O_FWJ3Cj_t2F3BcQMlSLfH", "1bzFMMVGwNhxtg8zRK9JJ4IyHSOMTmZ9R",
-        "15Ma8T5wxOLnVtQyJSEfruLr_BVh7RH02", "1LokOJUS3YFBQiaas7tmIX3Mt7dazkz9R",
-        "1GwyKHxW5RjZ3yrfiBNsnx9Wn25IZFOTC", "1-RlSxcV0P-lloN-M4BRe7sDhUF2pK4cx",
-        "1yBJHX80GZ0-49RFZ6RjUahOyY_P9kLIo", "1p1kCfkmPScL-RevHNkf8mNBOxExu8zbG",
-        "1dzcwrfb6819qK0SQgdCeX6kGoGfLBOVP", "1FoLRWPt5quSWQ2sGxcJLL0JHGmKtA6ZG",
-        "1ZYfyf7aoC0uxiqw8fOMTrmUOpo6_65k9"
-    }
-    for p_id in marileia_ids:
-        if p_id in fotos_str:
-            return "Mariléia Zélia Teixeira", "EEB João Teixeira Nunes"
-
-    # 1. Map by Email first (Most robust, filled out automatically)
-    if "orianoadriano" in email or "adriano" in email:
-        return "Adriano da Silva Oriano Junior", "EEM Almirante Lamego"
-    elif "lucaszampa" in email or "zampa" in email:
-        return "Lucas Zamparetti Oliveira", "EEB Henrique Fontes"
-    elif "douglas" in email:
-        return "Douglas Bardini Silveira", "EEB Henrique Fontes"
-    elif "elisa" in email:
-        return "Elisa Vieira da Silva Soares", "EEB João Teixeira Nunes"
-    elif "fabirevert" in email or "fabiola" in email:
-        return "Fabíola Medeiros Savi", "CEJA de Tubarão"
-    elif "luciana" in email or "345429" in email:
-        return "Luciana Fernandes", "EEB Senador Francisco Benjamin Gallotti"
-        
-    # 2. Map by Name if Email is empty or not matching
-    if "adriano" in sup:
-        return "Adriano da Silva Oriano Junior", "EEM Almirante Lamego"
-    elif "lucas" in sup:
-        return "Lucas Zamparetti Oliveira", "EEB Henrique Fontes"
-    elif "douglas" in sup:
-        return "Douglas Bardini Silveira", "EEB Henrique Fontes"
-    elif "elisa" in sup:
-        return "Elisa Vieira da Silva Soares", "EEB João Teixeira Nunes"
-    elif "marileia" in sup or "mariléia" in sup:
-        return "Mariléia Zélia Teixeira", "EEB João Teixeira Nunes"
-    elif "fabiola" in sup or "fabíola" in sup:
-        return "Fabíola Medeiros Savi", "CEJA de Tubarão"
-    elif "luciana" in sup:
-        return "Luciana Fernandes", "EEB Senador Francisco Benjamin Gallotti"
-        
-    return "Outros / Não Identificado", "Outros / Não Identificado"
-
-
 def render_image_carousel(images_list, interval_ms=4000, height=350):
-    """
-    Renders an auto-playing pure HTML/CSS/JS image carousel inside Streamlit.
-    images_list: List of dicts with {"url": "...", "orig": "..."}
-    """
-    import json
     urls = [img["url"] for img in images_list]
     js_images = json.dumps(urls)
     
@@ -360,81 +75,16 @@ def render_image_carousel(images_list, interval_ms=4000, height=350):
     <html>
     <head>
     <style>
-        body {{
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            font-family: 'Calibri', 'Arial', sans-serif;
-            background-color: transparent;
-        }}
-        .carousel-container {{
-            width: 100%;
-            height: {height}px;
-            position: relative;
-            overflow: hidden;
-            border-radius: 8px;
-            box-shadow: 0px 4px 10px rgba(0,0,0,0.15);
-            border: 1px solid #DCE6F1;
-        }}
-        .slide {{
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top: 0;
-            left: 0;
-            opacity: 0;
-            transition: opacity 1.0s ease-in-out;
-            z-index: 1;
-        }}
-        .slide.active {{
-            opacity: 1;
-            z-index: 2;
-        }}
-        .slide img {{
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }}
-        .caption-bar {{
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(31, 73, 125, 0.85); /* Corporate Blue with opacity */
-            color: white;
-            padding: 10px 15px;
-            font-size: 0.9rem;
-            text-align: center;
-            z-index: 3;
-            font-weight: bold;
-            letter-spacing: 0.5px;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
-        }}
-        .dots {{
-            position: absolute;
-            bottom: 45px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            gap: 8px;
-            z-index: 4;
-        }}
-        .dot {{
-            width: 10px;
-            height: 10px;
-            background: rgba(255, 255, 255, 0.5);
-            border-radius: 50%;
-            cursor: pointer;
-            transition: background 0.3s, transform 0.3s;
-        }}
-        .dot.active {{
-            background: #E2EFDA; /* Soft green active indicator */
-            transform: scale(1.2);
-            box-shadow: 0 0 5px rgba(0,0,0,0.5);
-        }}
-        .dot:hover {{
-            background: white;
-        }}
+        body {{ margin: 0; padding: 0; overflow: hidden; font-family: 'Calibri', 'Arial', sans-serif; background-color: transparent; }}
+        .carousel-container {{ width: 100%; height: {height}px; position: relative; overflow: hidden; border-radius: 8px; box-shadow: 0px 4px 10px rgba(0,0,0,0.15); border: 1px solid #DCE6F1; }}
+        .slide {{ width: 100%; height: 100%; position: absolute; top: 0; left: 0; opacity: 0; transition: opacity 1.0s ease-in-out; z-index: 1; }}
+        .slide.active {{ opacity: 1; z-index: 2; }}
+        .slide img {{ width: 100%; height: 100%; object-fit: cover; }}
+        .caption-bar {{ position: absolute; bottom: 0; left: 0; right: 0; background: rgba(31, 73, 125, 0.85); color: white; padding: 10px 15px; font-size: 0.9rem; text-align: center; z-index: 3; font-weight: bold; letter-spacing: 0.5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }}
+        .dots {{ position: absolute; bottom: 45px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 4; }}
+        .dot {{ width: 10px; height: 10px; background: rgba(255, 255, 255, 0.5); border-radius: 50%; cursor: pointer; transition: background 0.3s, transform 0.3s; }}
+        .dot.active {{ background: #E2EFDA; transform: scale(1.2); box-shadow: 0 0 5px rgba(0,0,0,0.5); }}
+        .dot:hover {{ background: white; }}
     </style>
     </head>
     <body>
@@ -443,64 +93,45 @@ def render_image_carousel(images_list, interval_ms=4000, height=350):
         <div class="dots" id="dots-wrapper"></div>
         <div class="caption-bar" id="caption-el"></div>
     </div>
-
     <script>
         const urls = {js_images};
         const interval = {interval_ms};
-        
         const slidesWrapper = document.getElementById('slides-wrapper');
         const dotsWrapper = document.getElementById('dots-wrapper');
         const captionEl = document.getElementById('caption-el');
         
-        // Generate Slides and Dots
         urls.forEach((url, index) => {{
             const slide = document.createElement('div');
             slide.className = 'slide' + (index === 0 ? ' active' : '');
             slide.innerHTML = `<img src="${{url}}" alt="Slide ${{index + 1}}">`;
             slidesWrapper.appendChild(slide);
-            
             const dot = document.createElement('div');
             dot.className = 'dot' + (index === 0 ? ' active' : '');
             dot.addEventListener('click', () => showSlide(index));
             dotsWrapper.appendChild(dot);
         }});
-        
-        captionEl.innerText = `Foto ${{1}} de ${{urls.length}}`;
-        
+        captionEl.innerText = `Foto 1 de ${{urls.length}}`;
         let currentIndex = 0;
         let slideInterval = setInterval(nextSlide, interval);
-        
         function showSlide(index) {{
             clearInterval(slideInterval);
-            const slides = document.querySelectorAll('.slide');
-            const dots = document.querySelectorAll('.dot');
-            
-            slides[currentIndex].classList.remove('active');
-            dots[currentIndex].classList.remove('active');
-            
+            document.querySelectorAll('.slide')[currentIndex].classList.remove('active');
+            document.querySelectorAll('.dot')[currentIndex].classList.remove('active');
             currentIndex = index;
-            
-            slides[currentIndex].classList.add('active');
-            dots[currentIndex].classList.add('active');
+            document.querySelectorAll('.slide')[currentIndex].classList.add('active');
+            document.querySelectorAll('.dot')[currentIndex].classList.add('active');
             captionEl.innerText = `Foto ${{currentIndex + 1}} de ${{urls.length}}`;
-            
             slideInterval = setInterval(nextSlide, interval);
         }}
-        
-        function nextSlide() {{
-            const nextIndex = (currentIndex + 1) % urls.length;
-            showSlide(nextIndex);
-        }}
+        function nextSlide() {{ showSlide((currentIndex + 1) % urls.length); }}
     </script>
     </body>
     </html>
     """
-    import streamlit.components.v1 as components
     components.html(html_code, height=height + 10)
 
-
 # -------------------------------------------------------------
-# EMBEDDED BACKUP DATA (PIBID qualitative narratives - Academically Dense & Complete)
+# EMBEDDED BACKUP DATA
 # -------------------------------------------------------------
 EMBEDDED_NARRATIVAS = [
     {
@@ -645,19 +276,16 @@ EMBEDDED_FORM_VISITAS = [
     }
 ]
 
+
 # -------------------------------------------------------------
 # DATA LOADING FUNCTION (ROBUST GOOGLE SHEETS SYNC)
 # -------------------------------------------------------------
 
-# -------------------------------------------------------------
-# SAFE COLUMN MAPPING UTILITIES
-# -------------------------------------------------------------
 def map_columns_safely(df, rules):
     mapped_cols = {}
     used_original_cols = set()
     mapped_standards = set()
     
-    # First pass: try exact matches (case-insensitive)
     for std_name, keywords in rules:
         for col in df.columns:
             if col in used_original_cols:
@@ -668,7 +296,6 @@ def map_columns_safely(df, rules):
                 mapped_standards.add(std_name)
                 break
                 
-    # Second pass: try keyword matches
     for std_name, keywords in rules:
         if std_name in mapped_standards:
             continue
@@ -685,9 +312,6 @@ def map_columns_safely(df, rules):
     return df.rename(columns=mapped_cols)
 
 
-# -------------------------------------------------------------
-# DATA LOADING FUNCTION (ROBUST GOOGLE SHEETS SYNC)
-# -------------------------------------------------------------
 @st.cache_data
 def load_data(gsheets_url=None):
     df_narrativas = pd.DataFrame(EMBEDDED_NARRATIVAS)
@@ -700,12 +324,9 @@ def load_data(gsheets_url=None):
             if match:
                 sheet_id = match.group(1)
                 export_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx"
-                
-                # Dynamic sheet loading
                 xls = pd.ExcelFile(export_url)
                 sheets = xls.sheet_names
                 
-                # Load Narrativas sheet
                 narr_sheet = None
                 for s in sheets:
                     if "Narrativas" in s or "Qualitativas" in s:
@@ -726,8 +347,7 @@ def load_data(gsheets_url=None):
                             ("Foto", ["foto", "link", "imagem", "registro"])
                         ]
                         df_narrativas = map_columns_safely(df_narr_temp, rules_narrativas)
-                
-                # Load Visitas sheet (Form responses)
+                        
                 vis_sheet = None
                 for s in sheets:
                     if "Respostas" in s or "Visita" in s or "Formulario" in s:
@@ -746,13 +366,12 @@ def load_data(gsheets_url=None):
                             ("Ficha_Frequencia", ["frequencia", "frequência", "ficha de frequencia"])
                         ]
                         df_visitas = map_columns_safely(df_vis_temp, rules_visitas)
-                
+                        
                 data_source_info = "Conectado à Planilha do Google Sheets Online 🟢"
                 st.sidebar.success("Sincronização qualitativa com o Google Sheets concluída!")
         except Exception as e:
             st.sidebar.error(f"Erro de conexão: certifique-se de que a planilha está compartilhada como 'Leitor público'. Detalhes: {e}")
             
-    # Ensure all expected columns exist with default values to prevent key errors
     for col in ["Escola", "Supervisor", "Projeto_Acao", "Periodo_Bimestre", "Metodologia", "Impacto_Escola", "Voz_Bolsista", "Dificuldades", "Foto"]:
         if col not in df_narrativas.columns:
             df_narrativas[col] = ""
@@ -767,7 +386,6 @@ def load_data(gsheets_url=None):
 # -------------------------------------------------------------
 # SIDEBAR - BRANDING & CONNECTIONS
 # -------------------------------------------------------------
-# Branding Logos (UNISUL and Anima Group styling - Elegant Corporate Badge)
 st.sidebar.markdown("""
 <div style='background-color:#1F497D; color:white; padding:15px; border-radius:8px; text-align:center; font-family:"Calibri",sans-serif; margin-bottom:15px;'>
     <h3 style='margin:0; font-size:1.3rem; font-weight:bold; letter-spacing:1px;'>PIBID UNISUL</h3>
@@ -776,10 +394,8 @@ st.sidebar.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Hardcoded Google Sheets URL (Opção 1: Ocultação Total para máxima segurança)
 gs_url = "https://docs.google.com/spreadsheets/d/1wjnzq6BABEZptZtcfESNZqZ7LV8qP966N5AFUscqwuA/edit?usp=drive_link"
 
-# Load datasets using the secure hardcoded URL
 df_narrativas, df_visitas, data_source_info = load_data(gs_url)
 
 st.sidebar.markdown("""
@@ -791,14 +407,12 @@ st.sidebar.markdown("""
 st.sidebar.divider()
 st.sidebar.title("🎯 Filtros Narrativos")
 
-# School and supervisor filters
-escolas_list = ["Todas"] + sorted(df_narrativas["Escola"].unique().tolist())
+escolas_list = ["Todas"] + sorted([str(x) for x in df_narrativas["Escola"].dropna().unique().tolist() if x])
 selected_escola = st.sidebar.selectbox("Filtrar por Núcleo / Escola:", escolas_list)
 
-supervisors_list = ["Todos"] + sorted(df_narrativas["Supervisor"].unique().tolist())
+supervisors_list = ["Todos"] + sorted([str(x) for x in df_narrativas["Supervisor"].dropna().unique().tolist() if x])
 selected_supervisor = st.sidebar.selectbox("Filtrar por Supervisor:", supervisors_list)
 
-# Apply filters
 df_filtered_narr = df_narrativas.copy()
 if selected_escola != "Todas":
     df_filtered_narr = df_filtered_narr[df_filtered_narr["Escola"] == selected_escola]
@@ -808,15 +422,13 @@ if selected_supervisor != "Todos":
 # -------------------------------------------------------------
 # MAIN HEADER
 # -------------------------------------------------------------
-st.markdown('<p class="main-title">PORTAL DE VIVÊNCIAS QUALITATIVAS PIBID UNISUL</p>', unsafe_allow_html=True)
+st.markdown('<p class="main-title">PORTAL DE EXPERIÊNCIAS QUALITATIVAS PIBID UNISUL</p>', unsafe_allow_html=True)
 st.markdown('<p class="subtitle">Portfólio Reflexivo de Práticas Docentes, Projetos de Intervenção e Registros Fotográficos • 2024 - 2026</p>', unsafe_allow_html=True)
 
-# -------------------------------------------------------------
-# TABS INTERFACE
-# -------------------------------------------------------------
+# THE TABS MUST MATCH THE NEW REQUEST EXACTLY
 tab_narr, tab_photos, tab_reflections, tab_search = st.tabs([
-    "📖 Portfólio de Narrativas & Vivências",
-    "📸 Mural de Visitas Mensais (Formulário)",
+    "📖 Portfólio de Narrativas & Experiências",
+    "📸 Registros do PIBID UNISUL",
     "🧠 Dimensões Qualitativas (Teoria e Prática)",
     "🔍 Busca de Práticas"
 ])
@@ -835,164 +447,102 @@ with tab_narr:
             with st.container():
                 st.markdown(f"""
                 <div class="qualitative-card">
-                    <div class="card-header">📌 {row['Projeto_Acao']}</div>
-                    <span class="badge-escola">🏢 {row['Escola']}</span>
-                    <span class="badge-supervisor">👨‍🏫 Supervisor: {row['Supervisor']}</span>
-                    <span class="badge-periodo">📅 {row['Periodo_Bimestre']}</span>
+                    <div class="card-header">📌 {row.get('Projeto_Acao', '')}</div>
+                    <span class="badge-escola">🏢 {row.get('Escola', '')}</span>
+                    <span class="badge-supervisor">👨‍🏫 Supervisor: {row.get('Supervisor', '')}</span>
+                    <span class="badge-periodo">📅 {row.get('Periodo_Bimestre', '')}</span>
                 </div>
                 """, unsafe_allow_html=True)
                 
-                # Split page into layout columns
-                col_text, col_visual = st.columns([3, 2])
+            col_text, col_visual = st.columns([3, 2])
+            
+            with col_text:
+                st.markdown("<p class='section-title'>📖 Como foi desenvolvido (Metodologia)</p>", unsafe_allow_html=True)
+                st.markdown(f"<p class='text-content'>{row.get('Metodologia', '')}</p>", unsafe_allow_html=True)
                 
-                with col_text:
-                    st.markdown("<p class='section-title'>📖 Como foi desenvolvido (Metodologia)</p>", unsafe_allow_html=True)
-                    st.markdown(f"<p class='text-content'>{row['Metodologia']}</p>", unsafe_allow_html=True)
-                    
-                    st.markdown("<p class='section-title'>🌱 Impacto Social e Pedagógico na Escola</p>", unsafe_allow_html=True)
-                    st.markdown(f"<p class='text-content'>{row['Impacto_Escola']}</p>", unsafe_allow_html=True)
-                    
-                    st.markdown("<p class='section-title'>👩‍🏫 A Voz do Bolsista (Prática Reflexiva)</p>", unsafe_allow_html=True)
-                    st.markdown(f"<p class='text-content'><i>\\\"{row['Voz_Bolsista']}\\\"</i></p>", unsafe_allow_html=True)
-                    
-                    st.markdown("<p class='section-title'>⚠️ Desafios & Como Foram Superados</p>", unsafe_allow_html=True)
-                    st.markdown(f"<p class='text-content'>{row['Dificuldades']}</p>", unsafe_allow_html=True)
+                st.markdown("<p class='section-title'>🌱 Impacto Social e Pedagógico na Escola</p>", unsafe_allow_html=True)
+                st.markdown(f"<p class='text-content'>{row.get('Impacto_Escola', '')}</p>", unsafe_allow_html=True)
                 
-                with col_visual:
-                    st.markdown("<p class='section-title'>📸 Registro Visual do Núcleo</p>", unsafe_allow_html=True)
-                    
-                    # 1. Busca dinâmica de fotos reais nas respostas do formulário (df_visitas) baseando-se no Supervisor (robust email and name check)
-                    sup_narrative = row.get("Supervisor", "")
-                    
-                    fotos_reais = []
-                    if not df_visitas.empty and sup_narrative:
-                        # Filter rows in df_visitas that map to this supervisor
-                        matching_rows = []
-                        for _, v_row in df_visitas.iterrows():
-                            identified_sup, _ = identify_supervisor_and_school(v_row)
-                            if identified_sup.lower().strip() == sup_narrative.lower().strip():
-                                matching_rows.append(v_row)
-                                
-                        # Compile all photos from these matching rows
-                        for m_row in matching_rows:
-                            v_photos = m_row.get("Fotos", "")
+                st.markdown("<p class='section-title'>👩‍🏫 A Voz do Bolsista (Prática Reflexiva)</p>", unsafe_allow_html=True)
+                st.markdown(f"<p class='text-content'><i>"{row.get('Voz_Bolsista', '')}"</i></p>", unsafe_allow_html=True)
+                
+                st.markdown("<p class='section-title'>⚠️ Desafios & Como Foram Superados</p>", unsafe_allow_html=True)
+                st.markdown(f"<p class='text-content'>{row.get('Dificuldades', '')}</p>", unsafe_allow_html=True)
+                
+            with col_visual:
+                st.markdown("<p class='section-title'>📸 Registro Visual do Núcleo</p>", unsafe_allow_html=True)
+                
+                sup_narrative = str(row.get("Supervisor", "")).strip()
+                fotos_reais = []
+                
+                if not df_visitas.empty and sup_narrative:
+                    for _, v_row in df_visitas.iterrows():
+                        v_sup = str(v_row.get("Supervisor", "")).strip()
+                        if sup_narrative.lower() in v_sup.lower() or v_sup.lower() in sup_narrative.lower():
+                            v_photos = v_row.get("Fotos", "")
                             processed_v = process_links(v_photos)
                             fotos_reais.extend([p for p in processed_v if p["type"] == "image"])
-                    
-                    # Exibe as fotos vinculadas dinamicamente via Carrossel ou Imagem Estática
-                    if fotos_reais:
-                        if len(fotos_reais) == 1:
-                            pass
-                            st.image(fotos_reais[0]["url"], use_container_width=True, caption=f"Registro de Visita - Supervisor(a) {sup_narrative}")
-                        else:
-                            pass
-                            render_image_carousel(fotos_reais, interval_ms=4000, height=380)
+                            
+                if fotos_reais:
+                    if len(fotos_reais) == 1:
+                        st.image(fotos_reais[0]["url"], use_container_width=True, caption=f"Registro de Visita - Supervisor(a) {sup_narrative}")
                     else:
-                        # Fallback: Se não houver fotos de visitas, usa os links da planilha Narrativas (podem ser múltiplos!)
-                        foto_url = row.get("Foto", "")
-                        processed_fallback = process_links(foto_url) if isinstance(foto_url, str) and foto_url.strip() else []
-                        
-                        fallback_images = [p for p in processed_fallback if p["type"] == "image"]
-                        fallback_folders = [p for p in processed_fallback if p["type"] == "folder"]
-                        
-                        if fallback_images:
-                            if len(fallback_images) == 1:
-                                st.image(fallback_images[0]["url"], use_container_width=True, caption=f"Foto: {row['Projeto_Acao']}")
-                            else:
-                                pass
-                                render_image_carousel(fallback_images, interval_ms=4000, height=380)
-                        elif fallback_folders:
-                            st.warning("Este núcleo possui fotos armazenadas em uma pasta do Google Drive.")
-                            st.link_button("Abrir Pasta de Fotos 🌐", fallback_folders[0]["url"])
+                        render_image_carousel(fotos_reais, interval_ms=4000, height=380)
+                else:
+                    foto_url = row.get("Foto", "")
+                    processed_fallback = process_links(foto_url) if isinstance(foto_url, str) and foto_url.strip() else []
+                    fallback_images = [p for p in processed_fallback if p["type"] == "image"]
+                    fallback_folders = [p for p in processed_fallback if p["type"] == "folder"]
+                    
+                    if fallback_images:
+                        if len(fallback_images) == 1:
+                            st.image(fallback_images[0]["url"], use_container_width=True, caption=f"Foto: {row.get('Projeto_Acao', '')}")
                         else:
-                            st.info("Nenhuma foto cadastrada ou enviada por este núcleo ainda.")
-                        
-                st.divider()
+                            render_image_carousel(fallback_images, interval_ms=4000, height=380)
+                    elif fallback_folders:
+                        st.warning("Este núcleo possui fotos armazenadas em uma pasta do Google Drive.")
+                        st.link_button("Abrir Pasta de Fotos 🌐", fallback_folders[0]["url"])
+                    else:
+                        st.info("Nenhuma foto cadastrada ou enviada por este núcleo ainda.")
+            st.divider()
 
 # -------------------------------------------------------------
-# TAB 2: VISITS AND FORM PHOTO GALLERY
+# TAB 2: VISITS AND FORM PHOTO GALLERY (Consolidated Gallery)
 # -------------------------------------------------------------
 with tab_photos:
-    st.markdown("### 📸 Acervo Consolidado de Registros por Núcleo")
-    st.write("Selecione a instituição de ensino para consultar os registros fotográficos consolidados por supervisor(a) independente da visita:")
+    st.markdown("### 📸 Acervo Completo de Registros do PIBID")
+    st.write("Galeria consolidada contendo todas as imagens enviadas nos formulários de visitas e narrativas do PIBID UNISUL.")
     
-    # Map each visit to its corresponding school based on supervisor name
-    escolas_visitas = {
-        "EEM Almirante Lamego": [],
-        "EEB Henrique Fontes": [],
-        "EEB João Teixeira Nunes": [],
-        "CEJA de Tubarão": [],
-        "EEB Senador Francisco Benjamin Gallotti": []
-    }
+    all_photos = []
+    seen_urls = set()
     
-    for idx, row in df_visitas.iterrows():
-        identified_sup, escola_pertencente = identify_supervisor_and_school(row)
-        if escola_pertencente != "Outros / Não Identificado":
-            escolas_visitas[escola_pertencente].append(row)
-            
-    escola_tabs_list = list(escolas_visitas.keys())
-    tab_esc_objs = st.tabs([f"🏢 {esc}" for esc in escola_tabs_list])
-    
-    for esc_idx, esc_name in enumerate(escola_tabs_list):
-        with tab_esc_objs[esc_idx]:
-            visitas_da_escola = escolas_visitas[esc_name]
-            if not visitas_da_escola:
-                st.info(f"Nenhum registro de visita encontrado para o núcleo {esc_name}.")
-            else:
-                # Group visits by supervisor
-                visits_by_sup = {}
-                for row_vis in visitas_da_escola:
-                    sup_name, _ = identify_supervisor_and_school(row_vis)
-                    if sup_name not in visits_by_sup:
-                        visits_by_sup[sup_name] = []
-                    visits_by_sup[sup_name].append(row_vis)
-                
-                st.success(f"Encontrado(s) {len(visits_by_sup)} supervisor(es) com registros fotográficos para esta escola parceira.")
-                
-                for sup_name, rows_list in visits_by_sup.items():
-                    # Collect all unique photo links from all visits for this supervisor
-                    all_sup_photos = []
-                    seen_urls = set()
-                    for row_vis in rows_list:
-                        photos_col = row_vis.get("Fotos", "")
-                        processed_photos = process_links(photos_col)
-                        for p in processed_photos:
-                            if p["type"] == "image" and p["url"] not in seen_urls:
-                                all_sup_photos.append(p)
-                                seen_urls.add(p["url"])
+    if not df_visitas.empty:
+        for _, row_vis in df_visitas.iterrows():
+            for p in process_links(row_vis.get("Fotos", "")):
+                if p["type"] == "image" and p["url"] not in seen_urls:
+                    all_photos.append(p)
+                    seen_urls.add(p["url"])
                     
-                    with st.expander(f"📌 Registros — Supervisor(a) {sup_name}"):
-                        st.markdown(f"**Total de registros fotográficos integrados:** `{len(all_sup_photos)} foto(s)`")
-                        st.divider()
-                        
-                        if all_sup_photos:
-                            if len(all_sup_photos) == 1:
-                                st.image(all_sup_photos[0]["url"], use_container_width=True, caption=f"Registro Fotográfico - {sup_name}")
-                            else:
-                                render_image_carousel(all_sup_photos, interval_ms=4000, height=450)
-                        else:
-                            st.info("Nenhuma imagem anexada às visitas deste supervisor ainda.")
-                        
-                        # Collect and show folders associated with this supervisor, if any
-                        folders_to_show = []
-                        seen_folders = set()
-                        for row_vis in rows_list:
-                            photos_col = row_vis.get("Fotos", "")
-                            processed_photos = process_links(photos_col)
-                            for p in processed_photos:
-                                if p["type"] == "folder" and p["url"] not in seen_folders:
-                                    folders_to_show.append(p)
-                                    seen_folders.add(p["url"])
-                                    
-                        if folders_to_show:
-                            st.markdown("---")
-                            st.markdown("#### 📂 Pastas do Google Drive Associadas:")
-                            for f_info in folders_to_show:
-                                f_name = clean_file_name(f_info.get("file_name", ""))
-                                if not f_name:
-                                    f_name = "Pasta de Fotos"
-                                st.warning(f"O supervisor associou uma pasta externa: **{f_name}**")
-                                st.link_button(f"Abrir {f_name} no Google Drive 🌐", f_info["url"])
+    if not df_narrativas.empty:
+        for _, row_narr in df_narrativas.iterrows():
+            for p in process_links(row_narr.get("Foto", "")):
+                if p["type"] == "image" and p["url"] not in seen_urls:
+                    all_photos.append(p)
+                    seen_urls.add(p["url"])
+                    
+    if all_photos:
+        # Carrossel Principal
+        render_image_carousel(all_photos, interval_ms=3500, height=500)
+        
+        st.divider()
+        st.markdown("#### 🖼️ Mosaico de Fotos em Grade")
+        
+        # Mosaico Grid (4 columns)
+        cols = st.columns(4)
+        for idx, photo in enumerate(all_photos):
+            cols[idx % 4].image(photo["url"], use_container_width=True)
+    else:
+        st.info("Nenhuma imagem encontrada nos dados do sistema.")
 
 # -------------------------------------------------------------
 # TAB 3: THEORETICAL AND REFLECTIVE DIMENSIONS (High Density Academic Text)
@@ -1026,9 +576,9 @@ with tab_reflections:
         Ao acompanhar o fechamento de notas, as dinâmicas de conselho e o preenchimento de ferramentas de gestão docente online (como o sistema 'Professor Online' de Santa Catarina), os IDs puderam confrontar as concepções de avaliação idealizadas com as demandas reais. 
         Os relatórios registram anotações profundas dos bolsistas sobre as discussões de Conselho:
         <ul>
-            <li>A necessidade crítica de ir além do fechamento de médias numéricas frias, defendendo a atribuição de notas de conselho a partir do esforço individual, do empenho e da evolução pedagógica do discente;</li>
-            <li>O combate ético a comentários depreciativos dirigidos a professores ingressantes ou a turmas rotuladas como desorganizadas, reforçando o compromisso com o encorajamento mútuo e a postura ética em reuniões docentes;</li>
-            <li>A análise do cenário escolar sob a ótica de múltiplos fatores, diagnosticando casos corriqueiros de sofrimento emocional, evasão e altas taxas de infrequência que exigem mediações que vão além da punição.</li>
+        <li>A necessidade crítica de ir além do fechamento de médias numéricas frias, defendendo a atribuição de notas de conselho a partir do esforço individual, do empenho e da evolução pedagógica do discente;</li>
+        <li>O combate ético a comentários depreciativos dirigidos a professores ingressantes ou a turmas rotuladas como desorganizadas, reforçando o compromisso com o encorajamento mútuo e a postura ética em reuniões docentes;</li>
+        <li>A análise do cenário escolar sob a ótica de múltiplos fatores, diagnosticando casos corriqueiros de sofrimento emocional, evasão e altas taxas de infrequência que exigem mediações que vão além da punição.</li>
         </ul>
         
         <b>4. Planejamento Colaborativo e Grupos de Estudo:</b><br>
@@ -1094,18 +644,18 @@ with tab_reflections:
 # -------------------------------------------------------------
 with tab_search:
     st.markdown("### 🔍 Busca de Narrativas por Palavra-Chave")
-    st.write("Digite um tema ou termo de interesse (ex: *Bullying*, *Livro*, *Feminicídio*, *Freire*, *EJA*) para filtrar as práticas e relatos de vivência armazenados no banco de dados.")
+    st.write("Digite um tema ou termo de interesse (ex: *Bullying*, *Livro*, *Feminicídio*, *Freire*, *EJA*) para filtrar as práticas e relatos de experiência armazenados no banco de dados.")
     
     search_query = st.text_input("Digite o termo para buscar:", "")
     
     if search_query:
         query_clean = search_query.lower()
         search_results = df_narrativas[
-            df_narrativas["Metodologia"].str.lower().str.contains(query_clean) |
-            df_narrativas["Impacto_Escola"].str.lower().str.contains(query_clean) |
-            df_narrativas["Voz_Bolsista"].str.lower().str.contains(query_clean) |
-            df_narrativas["Projeto_Acao"].str.lower().str.contains(query_clean) |
-            df_narrativas["Dificuldades"].str.lower().str.contains(query_clean)
+            df_narrativas["Metodologia"].astype(str).str.lower().str.contains(query_clean) |
+            df_narrativas["Impacto_Escola"].astype(str).str.lower().str.contains(query_clean) |
+            df_narrativas["Voz_Bolsista"].astype(str).str.lower().str.contains(query_clean) |
+            df_narrativas["Projeto_Acao"].astype(str).str.lower().str.contains(query_clean) |
+            df_narrativas["Dificuldades"].astype(str).str.lower().str.contains(query_clean)
         ]
         
         if search_results.empty:
@@ -1113,19 +663,20 @@ with tab_search:
         else:
             st.success(f"Encontrado {len(search_results)} relato(s) pedagógico(s) correspondente(s)!")
             for idx, row in search_results.iterrows():
-                with st.expander(f"📌 {row['Projeto_Acao']} — {row['Escola']} ({row['Periodo_Bimestre']})"):
-                    st.markdown(f"**Supervisor:** `{row['Supervisor']}`")
-                    st.markdown(f"**Como foi desenvolvido:** {row['Metodologia']}")
-                    st.markdown(f"**Impacto Social:** {row['Impacto_Escola']}")
-                    st.markdown(f"**A Voz do Bolsista:** *\"{row['Voz_Bolsista']}\"*\n")
-                    st.markdown(f"**Dificuldades Superadas:** {row['Dificuldades']}")
+                with st.expander(f"📌 {row.get('Projeto_Acao', '')} — {row.get('Escola', '')} ({row.get('Periodo_Bimestre', '')})"):
+                    st.markdown(f"**Supervisor:** `{row.get('Supervisor', '')}`")
+                    st.markdown(f"**Como foi desenvolvido:** {row.get('Metodologia', '')}")
+                    st.markdown(f"**Impacto Social:** {row.get('Impacto_Escola', '')}")
+                    st.markdown(f"**A Voz do Bolsista:** *"{row.get('Voz_Bolsista', '')}"*
+")
+                    st.markdown(f"**Dificuldades Superadas:** {row.get('Dificuldades', '')}")
                     
                     foto = row.get("Foto", "")
                     if isinstance(foto, str) and foto.strip():
-                        ptype, conv_url = get_direct_img_url(foto)
+                        ptype, conv_url, _ = get_direct_img_url(foto)
                         if ptype == "image":
-                            st.image(conv_url, width=500, caption=row['Projeto_Acao'])
+                            st.image(conv_url, width=500, caption=row.get('Projeto_Acao', ''))
                         else:
-                            st.image(foto, width=500, caption=row['Projeto_Acao'])
+                            st.image(foto, width=500, caption=row.get('Projeto_Acao', ''))
     else:
         st.info("Digite uma palavra no campo acima para iniciar a busca.")
