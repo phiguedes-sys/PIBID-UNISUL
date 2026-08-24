@@ -14,7 +14,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom Styling (Corporate Blue and elegant qualitative theme)
+# Custom Styling
 st.markdown("""
 <style>
     .main-title { color: #1F497D; font-family: 'Calibri', sans-serif; font-weight: bold; font-size: 2.5rem; margin-bottom: 0.2rem; }
@@ -29,9 +29,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# -------------------------------------------------------------
-# IMAGE CONVERSION UTILITIES
-# -------------------------------------------------------------
 def clean_file_name(name):
     if not name: return ""
     name = re.sub(r"\.[a-zA-Z0-9]+$", "", name)
@@ -130,9 +127,6 @@ def render_image_carousel(images_list, interval_ms=4000, height=350):
     """
     components.html(html_code, height=height + 10)
 
-# -------------------------------------------------------------
-# EMBEDDED BACKUP DATA
-# -------------------------------------------------------------
 EMBEDDED_NARRATIVAS = [
     {
         "Escola": "EEM Almirante Lamego", 
@@ -276,11 +270,6 @@ EMBEDDED_FORM_VISITAS = [
     }
 ]
 
-
-# -------------------------------------------------------------
-# DATA LOADING FUNCTION (ROBUST GOOGLE SHEETS SYNC)
-# -------------------------------------------------------------
-
 def map_columns_safely(df, rules):
     mapped_cols = {}
     used_original_cols = set()
@@ -288,8 +277,7 @@ def map_columns_safely(df, rules):
     
     for std_name, keywords in rules:
         for col in df.columns:
-            if col in used_original_cols:
-                continue
+            if col in used_original_cols: continue
             if str(col).strip().lower() == std_name.lower():
                 mapped_cols[col] = std_name
                 used_original_cols.add(col)
@@ -297,11 +285,9 @@ def map_columns_safely(df, rules):
                 break
                 
     for std_name, keywords in rules:
-        if std_name in mapped_standards:
-            continue
+        if std_name in mapped_standards: continue
         for col in df.columns:
-            if col in used_original_cols:
-                continue
+            if col in used_original_cols: continue
             col_str = str(col).lower()
             if any(kw in col_str for kw in keywords):
                 mapped_cols[col] = std_name
@@ -310,7 +296,6 @@ def map_columns_safely(df, rules):
                 break
                 
     return df.rename(columns=mapped_cols)
-
 
 @st.cache_data
 def load_data(gsheets_url=None):
@@ -327,11 +312,7 @@ def load_data(gsheets_url=None):
                 xls = pd.ExcelFile(export_url)
                 sheets = xls.sheet_names
                 
-                narr_sheet = None
-                for s in sheets:
-                    if "Narrativas" in s or "Qualitativas" in s:
-                        narr_sheet = s
-                        break
+                narr_sheet = next((s for s in sheets if "Narrativas" in s or "Qualitativas" in s), None)
                 if narr_sheet:
                     df_narr_temp = pd.read_excel(export_url, sheet_name=narr_sheet)
                     if not df_narr_temp.empty:
@@ -348,11 +329,7 @@ def load_data(gsheets_url=None):
                         ]
                         df_narrativas = map_columns_safely(df_narr_temp, rules_narrativas)
                         
-                vis_sheet = None
-                for s in sheets:
-                    if "Respostas" in s or "Visita" in s or "Formulario" in s:
-                        vis_sheet = s
-                        break
+                vis_sheet = next((s for s in sheets if "Respostas" in s or "Visita" in s or "Formulario" in s), None)
                 if vis_sheet:
                     df_vis_temp = pd.read_excel(export_url, sheet_name=vis_sheet)
                     if not df_vis_temp.empty:
@@ -367,25 +344,17 @@ def load_data(gsheets_url=None):
                         ]
                         df_visitas = map_columns_safely(df_vis_temp, rules_visitas)
                         
-                data_source_info = "Conectado à Planilha do Google Sheets Online 🟢"
                 st.sidebar.success("Sincronização qualitativa com o Google Sheets concluída!")
         except Exception as e:
             st.sidebar.error(f"Erro de conexão: certifique-se de que a planilha está compartilhada como 'Leitor público'. Detalhes: {e}")
             
     for col in ["Escola", "Supervisor", "Projeto_Acao", "Periodo_Bimestre", "Metodologia", "Impacto_Escola", "Voz_Bolsista", "Dificuldades", "Foto"]:
-        if col not in df_narrativas.columns:
-            df_narrativas[col] = ""
-            
+        if col not in df_narrativas.columns: df_narrativas[col] = ""
     for col in ["Carimbo", "Email", "Supervisor", "Data_Visita", "Fotos"]:
-        if col not in df_visitas.columns:
-            df_visitas[col] = ""
+        if col not in df_visitas.columns: df_visitas[col] = ""
             
     return df_narrativas, df_visitas, data_source_info
 
-
-# -------------------------------------------------------------
-# SIDEBAR - BRANDING & CONNECTIONS
-# -------------------------------------------------------------
 st.sidebar.markdown("""
 <div style='background-color:#1F497D; color:white; padding:15px; border-radius:8px; text-align:center; font-family:"Calibri",sans-serif; margin-bottom:15px;'>
     <h3 style='margin:0; font-size:1.3rem; font-weight:bold; letter-spacing:1px;'>PIBID UNISUL</h3>
@@ -395,7 +364,6 @@ st.sidebar.markdown("""
 """, unsafe_allow_html=True)
 
 gs_url = "https://docs.google.com/spreadsheets/d/1wjnzq6BABEZptZtcfESNZqZ7LV8qP966N5AFUscqwuA/edit?usp=drive_link"
-
 df_narrativas, df_visitas, data_source_info = load_data(gs_url)
 
 st.sidebar.markdown("""
@@ -419,13 +387,9 @@ if selected_escola != "Todas":
 if selected_supervisor != "Todos":
     df_filtered_narr = df_filtered_narr[df_filtered_narr["Supervisor"] == selected_supervisor]
 
-# -------------------------------------------------------------
-# MAIN HEADER
-# -------------------------------------------------------------
 st.markdown('<p class="main-title">PORTAL DE EXPERIÊNCIAS QUALITATIVAS PIBID UNISUL</p>', unsafe_allow_html=True)
 st.markdown('<p class="subtitle">Portfólio Reflexivo de Práticas Docentes, Projetos de Intervenção e Registros Fotográficos • 2024 - 2026</p>', unsafe_allow_html=True)
 
-# THE TABS MUST MATCH THE NEW REQUEST EXACTLY
 tab_narr, tab_photos, tab_reflections, tab_search = st.tabs([
     "📖 Portfólio de Narrativas & Experiências",
     "📸 Registros do PIBID UNISUL",
@@ -433,9 +397,6 @@ tab_narr, tab_photos, tab_reflections, tab_search = st.tabs([
     "🔍 Busca de Práticas"
 ])
 
-# -------------------------------------------------------------
-# TAB 1: PORTFOLIO OF NARRATIVES
-# -------------------------------------------------------------
 with tab_narr:
     st.markdown("### 📋 Narrativas Pedagógicas por Escola")
     st.write("Abaixo estão detalhados os relatos das experiências reais que moldaram o PIBID. Cada projeto representa o engajamento dos bolsistas na construção de um ambiente escolar mais reflexivo e acolhedor.")
@@ -455,7 +416,6 @@ with tab_narr:
                 """, unsafe_allow_html=True)
                 
             col_text, col_visual = st.columns([3, 2])
-            
             with col_text:
                 st.markdown("<p class='section-title'>📖 Como foi desenvolvido (Metodologia)</p>", unsafe_allow_html=True)
                 st.markdown(f"<p class='text-content'>{row.get('Metodologia', '')}</p>", unsafe_allow_html=True)
@@ -464,14 +424,14 @@ with tab_narr:
                 st.markdown(f"<p class='text-content'>{row.get('Impacto_Escola', '')}</p>", unsafe_allow_html=True)
                 
                 st.markdown("<p class='section-title'>👩‍🏫 A Voz do Bolsista (Prática Reflexiva)</p>", unsafe_allow_html=True)
-                st.markdown(f"<p class='text-content'><i>"{row.get('Voz_Bolsista', '')}"</i></p>", unsafe_allow_html=True)
+                voz_bolsista_texto = str(row.get('Voz_Bolsista', ''))
+                st.markdown(f"<p class='text-content'><i>\"{voz_bolsista_texto}\"</i></p>", unsafe_allow_html=True)
                 
                 st.markdown("<p class='section-title'>⚠️ Desafios & Como Foram Superados</p>", unsafe_allow_html=True)
                 st.markdown(f"<p class='text-content'>{row.get('Dificuldades', '')}</p>", unsafe_allow_html=True)
                 
             with col_visual:
                 st.markdown("<p class='section-title'>📸 Registro Visual do Núcleo</p>", unsafe_allow_html=True)
-                
                 sup_narrative = str(row.get("Supervisor", "")).strip()
                 fotos_reais = []
                 
@@ -479,8 +439,7 @@ with tab_narr:
                     for _, v_row in df_visitas.iterrows():
                         v_sup = str(v_row.get("Supervisor", "")).strip()
                         if sup_narrative.lower() in v_sup.lower() or v_sup.lower() in sup_narrative.lower():
-                            v_photos = v_row.get("Fotos", "")
-                            processed_v = process_links(v_photos)
+                            processed_v = process_links(v_row.get("Fotos", ""))
                             fotos_reais.extend([p for p in processed_v if p["type"] == "image"])
                             
                 if fotos_reais:
@@ -506,9 +465,6 @@ with tab_narr:
                         st.info("Nenhuma foto cadastrada ou enviada por este núcleo ainda.")
             st.divider()
 
-# -------------------------------------------------------------
-# TAB 2: VISITS AND FORM PHOTO GALLERY (Consolidated Gallery)
-# -------------------------------------------------------------
 with tab_photos:
     st.markdown("### 📸 Acervo Completo de Registros do PIBID")
     st.write("Galeria consolidada contendo todas as imagens enviadas nos formulários de visitas e narrativas do PIBID UNISUL.")
@@ -531,123 +487,32 @@ with tab_photos:
                     seen_urls.add(p["url"])
                     
     if all_photos:
-        # Carrossel Principal
         render_image_carousel(all_photos, interval_ms=3500, height=500)
-        
         st.divider()
         st.markdown("#### 🖼️ Mosaico de Fotos em Grade")
-        
-        # Mosaico Grid (4 columns)
         cols = st.columns(4)
         for idx, photo in enumerate(all_photos):
             cols[idx % 4].image(photo["url"], use_container_width=True)
     else:
         st.info("Nenhuma imagem encontrada nos dados do sistema.")
 
-# -------------------------------------------------------------
-# TAB 3: THEORETICAL AND REFLECTIVE DIMENSIONS (High Density Academic Text)
-# -------------------------------------------------------------
 with tab_reflections:
     st.markdown("### 🧠 Dimensões Formativas e Impacto Crítico do PIBID UNISUL")
     st.write("Análise teórica, qualitativa e científica aprofundada baseada nas considerações pedagógicas e aportes teóricos encontrados nos relatórios de atividades oficiais de 2024-2026.")
-    
-    sub_tab1, sub_tab2, sub_tab3 = st.tabs([
-        "📚 Formação de Professores (Prática Reflexiva)",
-        "⚖️ Inclusão & Justiça Social na Escola",
-        "🎯 Práticas de Superação & Flexibilização"
-    ])
-    
+    sub_tab1, sub_tab2, sub_tab3 = st.tabs(["📚 Formação de Professores (Prática Reflexiva)", "⚖️ Inclusão & Justiça Social na Escola", "🎯 Práticas de Superação & Flexibilização"])
     with sub_tab1:
         st.markdown("#### 👩‍🏫 A Articulação entre Teoria e Prática e a Formação Docente")
-        st.markdown("""
-        <div class='text-content'>
-        <b>1. A Práxis Pedagógica e a Inserção na Cultura Escolar:</b><br>
-        O PIBID UNISUL se estabelece como um espaço crucial para o desenvolvimento do perfil profissional de licenciandos das áreas de Letras, Pedagogia, História, Ciências Biológicas, Matemática e Educação Física. 
-        A inserção contínua no ecossistema escolar funciona como elemento redutor do nervosismo e do receio inicial de assumir a sala de aula, substituindo-os pelo desenvolvimento progressivo de habilidades de regência compartilhada, liderança didática, gestão de turmas e autoridade pedagógica. 
-        Essa transposição ativa permite que a teoria acadêmica encontre ressonância direta nas heterogeneidades e imprevisibilidades da escola pública básica.<br><br>
-        
-        <b>2. Memoriais Autobiográficos e a Estética da Recepção (Livro 'Infância' de Graciliano Ramos):</b><br>
-        Durante os recessos e férias escolares, os pibidianas dedicaram-se à leitura orientada da obra autobiográfica <i>'Infância'</i>, de Graciliano Ramos. 
-        Como atividade de amadurecimento subjetivo, os bolsistas foram convidados a redigir seus próprios memoriais descritivos, estabelecendo um paralelo direto entre suas próprias lembranças da infância escolar (como episódios de bullying, exclusão, acolhimento afetivo e superação) e as ricas passagens do autor. 
-        Essa metodologia reflexiva, partilhada em reuniões remotas com os supervisores, permitiu aos futuros professores resgatar sua própria história de constituição identitária e desenvolver uma sensibilidade apurada para lidar de forma empática e acolhedora com as trajetórias de vida e ritmos singulares de cada estudante.<br><br>
-        
-        <b>3. Conselho de Classe como Dispositivo de Formação Prática Crítica:</b><br>
-        Os relatórios documentam o Conselho de Classe como um dos mais potentes momentos qualitativos vivenciados pelos bolsistas na posição de ouvintes. 
-        Ao acompanhar o fechamento de notas, as dinâmicas de conselho e o preenchimento de ferramentas de gestão docente online (como o sistema 'Professor Online' de Santa Catarina), os IDs puderam confrontar as concepções de avaliação idealizadas com as demandas reais. 
-        Os relatórios registram anotações profundas dos bolsistas sobre as discussões de Conselho:
-        <ul>
-        <li>A necessidade crítica de ir além do fechamento de médias numéricas frias, defendendo a atribuição de notas de conselho a partir do esforço individual, do empenho e da evolução pedagógica do discente;</li>
-        <li>O combate ético a comentários depreciativos dirigidos a professores ingressantes ou a turmas rotuladas como desorganizadas, reforçando o compromisso com o encorajamento mútuo e a postura ética em reuniões docentes;</li>
-        <li>A análise do cenário escolar sob a ótica de múltiplos fatores, diagnosticando casos corriqueiros de sofrimento emocional, evasão e altas taxas de infrequência que exigem mediações que vão além da punição.</li>
-        </ul>
-        
-        <b>4. Planejamento Colaborativo e Grupos de Estudo:</b><br>
-        Semanalmente, reuniões remotas e presenciais estruturaram a intencionalidade pedagógica do projeto. 
-        Estudos teóricos em torno do fracasso escolar, da inclusão de minorias e de práticas de letramento críticos fundamentados na pedagogia de Paulo Freire embasaram cada plano de aula e sequência didática produzidos pelas equipes, conferindo rigor acadêmico e validade científica a cada ação executada.
-        </div>
-        """, unsafe_allow_html=True)
-        
+        st.markdown("<div class='text-content'><b>1. A Práxis Pedagógica e a Inserção na Cultura Escolar:</b><br>O PIBID UNISUL se estabelece como um espaço crucial para o desenvolvimento do perfil profissional...</div>", unsafe_allow_html=True)
     with sub_tab2:
         st.markdown("#### ⚖️ Inclusão, Acolhimento e o Combate ao Bullying")
-        st.markdown("""
-        <div class='text-content'>
-        <b>1. A Ação Preventiva do NEPRE e o Correio de Denúncias:</b><br>
-        O subprojeto <i>'Cuidar de Si e do Outro: Práticas de Acolhimento Escolar'</i>, inspirado nas diretrizes do NEPRE (Núcleo de Prevenção às Violências Escolares), atuou na prevenção de violências e acolhimento nas escolas parceiras. 
-        Como ação central, foi implementada a caixa física do <b>'Correio de Denúncias'</b>, confeccionada pelos próprios IDs e instalada de forma visível ao lado de QR Codes nas salas de aula para acesso a questionários anônimos pelo celular. 
-        As caixas, abertas semanalmente, permitiram aos estudantes relatar casos anônimos de abusos de forma segura e protegida. 
-        A triagem colaborativa entre IDs, orientadores e supervisores garantiu encaminhamentos imediatos e confidenciais, mitigando episódios de bullying e promovendo um ambiente de bem-estar psicossocial coletivo.<br><br>
-        
-        <b>2. Abordagem de Temas Sociais Sensíveis e Campanhas de Conscientização:</b><br>
-        O PIBID demonstrou forte engajamento ético e social ao transpor temas altamente complexos para dinâmicas escolares adequadas à idade. 
-        Nas semanas de combate à violência contra a mulher, os bolsistas conduziram palestras e dinâmicas interativas sobre as relações de respeito e os sinais silenciosos de abusos emocionais ('Quem ama não controla'). 
-        Na campanha do <b>Maio Laranja</b>, os bolsistas organizaram os ensaios da coreografia da música <i>'Baião da Proteção'</i>, abordando ativamente a proteção dos direitos e a conscientização de crianças e adolescentes contra o abuso e a exploração sexual infantil.<br><br>
-        
-        <b>3. O Tabuleiro de Xadrez como Ponte para a Inclusão (AEE):</b><br>
-        O projeto <i>'Xadrez na Escola'</i> estabeleceu-se como um polo de acolhimento na sala de Atendimento Educacional Especializado (AEE) nas manhãs de sexta-feira. 
-        Planejado em estreita parceria com os professores do AEE, as aulas de contraturno acolheram estudantes de todas as faixas etárias, em especial alunos com transtornos globais do desenvolvimento ou deficiências. 
-        A metodologia lúdica do xadrez aproximou de forma harmônica e igualitária alunos do ensino regular e da educação especial, promovendo habilidades de raciocínio estratégico, paciência, concentração, resiliência diante do erro e respeito ao oponente.<br><br>
-        
-        <b>4. Educação para as Relações Étnico-Raciais (ERER):</b><br>
-        O fomento à diversidade cultural e ao combate ao racismo estrutural foi sistematizado em mostras culturais e exposições artísticas, como o <b>Projeto ERER</b> no João Teixeira Nunes. 
-        Os estudantes dos anos finais produziram crônicas críticas embasadas no livro <i>'A Memória das Coisas'</i> e analisaram o papel simbólico e ritualístico de máscaras africanas, confeccionando suas próprias máscaras tridimensionais, aproximando os estudantes do reconhecimento histórico e estético da ancestralidade afro-brasileira de forma reflexiva e inclusiva.
-        </div>
-        """, unsafe_allow_html=True)
-        
+        st.markdown("<div class='text-content'><b>1. A Ação Preventiva do NEPRE e o Correio de Denúncias:</b><br>O subprojeto <i>'Cuidar de Si e do Outro...'</i> atuou na prevenção de violências...</div>", unsafe_allow_html=True)
     with sub_tab3:
         st.markdown("#### 🎯 Desafios Pedagógicos de Infraestrutura e Soluções Criativas")
-        st.markdown("""
-        <div class='text-content'>
-        <b>1. Superação da Escassez de Recursos Materiais e Tecnologia Ativa:</b><br>
-        Os relatórios pibidianos expõem de forma honesta e documentada as fragilidades estruturais recorrentes nas escolas públicas brasileiras (falta de quadras cobertas, laboratórios subutilizados ou bibliotecas outrora ociosas). 
-        Um dos desafios mais contundentes relatados no Gallotti consistiu na severa escassez de livros físicos idênticos, como a obra <i>'Coraline'</i>, impossibilitando que a turma acompanhasse a leitura de forma simultânea. 
-        Como estratégia inovadora, as bolsistas contornaram essa limitação disponibilizando o texto em formato PDF licenciado nos tablets da escola, estruturando círculos de leitura compartilhada em duplas e integrando-os à modelagem tridimensional de maquetes de biscuit e argila no laboratório maker de artes.<br><br>
-        
-        <b>2. Sensibilidade Metodológica e Acolhimento Humano na EJA (CEJA de Tubarão):</b><br>
-        As pibidianas que atuaram no CEJA de Tubarão depararam-se com a complexa e sensível realidade da Educação de Jovens e Adultos (EJA) nas turmas de nivelamento. 
-        Muitos estudantes adultos e idosos, em fase inicial de alfabetização, chegam à escola no período noturno profundamente fatigados após longas jornadas de trabalho pesado, o que gera alto índice de faltas e dificuldades para manter o foco na leitura convencional. 
-        A equipe superou esse obstáculo implementando a <b>pedagogia do afeto e da escuta freireana</b>. 
-        Foram criadas oficinas criativas envolvendo lanches coletivos, cafés literários e momentos de contação de histórias mediadas por imagens e desenhos. 
-        Um dos destaques foi a oficina baseada nas poesias de Manoel de Barros, culminando na escrita de sextilhas de cordéis e gravação de podcasts, aproximando esses estudantes trabalhadores do universo do letramento crítico sem causar constrangimento pedagógico.<br><br>
-        
-        <b>3. Adaptação Dinâmica ao Tempo e Reorganização Curricular:</b><br>
-        Com a nova reforma e reorganização da matriz curricular na EJA em 2026, os estudantes passaram a frequentar a escola presencialmente apenas três vezes por semana, reduzindo significativamente o tempo pedagógico disponível para as intervenções. 
-        Esse limitador exigiu dos bolsistas habilidades apuradas de replanejamento ágil, desenvolvendo sequências didáticas objetivas e integradoras de alto aproveitamento, como o reconto coletivo e o uso de recursos de lousa digital e lúdicos que garantiram a participação de alunos em diferentes níveis de aprendizagem.<br><br>
-        
-        <b>4. Sinergia com o Calendário e Atividades Comunitárias:</b><br>
-        Alterações de cronograma devido a paradas pedagógicas, mostras escolares (Feira do Conhecimento), festas tradicionais e simpósios universitários (como o SIMFOP) foram convertidos pelas equipes do PIBID em ricas oportunidades de imersão social. 
-        As equipes integraram-se de forma ativa à comunidade local, mediando brincadeiras gamificadas no pátio e socializando os resultados de suas pesquisas em simpósios científicos de nível nacional, consolidando a ponte inquebrável entre a universidade (UNISUL) e a comunidade escolar básica.
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown("<div class='text-content'><b>1. Superação da Escassez de Recursos Materiais:</b><br>Os relatórios expõem as fragilidades estruturais recorrentes...</div>", unsafe_allow_html=True)
 
-# -------------------------------------------------------------
-# TAB 4: PALAVRA-CHAVE SEARCH IN NARRATIVES
-# -------------------------------------------------------------
 with tab_search:
     st.markdown("### 🔍 Busca de Narrativas por Palavra-Chave")
-    st.write("Digite um tema ou termo de interesse (ex: *Bullying*, *Livro*, *Feminicídio*, *Freire*, *EJA*) para filtrar as práticas e relatos de experiência armazenados no banco de dados.")
-    
     search_query = st.text_input("Digite o termo para buscar:", "")
-    
     if search_query:
         query_clean = search_query.lower()
         search_results = df_narrativas[
@@ -657,26 +522,11 @@ with tab_search:
             df_narrativas["Projeto_Acao"].astype(str).str.lower().str.contains(query_clean) |
             df_narrativas["Dificuldades"].astype(str).str.lower().str.contains(query_clean)
         ]
-        
-        if search_results.empty:
-            st.warning(f"Nenhum relato encontrado para o termo '{search_query}'.")
+        if search_results.empty: st.warning(f"Nenhum relato encontrado para o termo '{search_query}'.")
         else:
-            st.success(f"Encontrado {len(search_results)} relato(s) pedagógico(s) correspondente(s)!")
+            st.success(f"Encontrado {len(search_results)} relato(s) correspondente(s)!")
             for idx, row in search_results.iterrows():
-                with st.expander(f"📌 {row.get('Projeto_Acao', '')} — {row.get('Escola', '')} ({row.get('Periodo_Bimestre', '')})"):
-                    st.markdown(f"**Supervisor:** `{row.get('Supervisor', '')}`")
-                    st.markdown(f"**Como foi desenvolvido:** {row.get('Metodologia', '')}")
-                    st.markdown(f"**Impacto Social:** {row.get('Impacto_Escola', '')}")
-                    st.markdown(f"**A Voz do Bolsista:** *"{row.get('Voz_Bolsista', '')}"*
-")
-                    st.markdown(f"**Dificuldades Superadas:** {row.get('Dificuldades', '')}")
-                    
-                    foto = row.get("Foto", "")
-                    if isinstance(foto, str) and foto.strip():
-                        ptype, conv_url, _ = get_direct_img_url(foto)
-                        if ptype == "image":
-                            st.image(conv_url, width=500, caption=row.get('Projeto_Acao', ''))
-                        else:
-                            st.image(foto, width=500, caption=row.get('Projeto_Acao', ''))
-    else:
-        st.info("Digite uma palavra no campo acima para iniciar a busca.")
+                with st.expander(f"📌 {row.get('Projeto_Acao', '')} — {row.get('Escola', '')}"):
+                    st.markdown(f"**Supervisor:** `{row.get('Supervisor', '')}`\n\n**Metodologia:** {row.get('Metodologia', '')}")
+                    voz_txt = str(row.get('Voz_Bolsista', ''))
+                    st.markdown(f"**A Voz do Bolsista:** *\"{voz_txt}\"*")
