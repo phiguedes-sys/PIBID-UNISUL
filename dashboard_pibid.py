@@ -14,7 +14,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom Styling
+# Custom Styling (Corporate Blue and elegant qualitative theme)
 st.markdown("""
 <style>
     .main-title { color: #1F497D; font-family: 'Calibri', sans-serif; font-weight: bold; font-size: 2.5rem; margin-bottom: 0.2rem; }
@@ -29,6 +29,9 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+# -------------------------------------------------------------
+# IMAGE CONVERSION UTILITIES
+# -------------------------------------------------------------
 def clean_file_name(name):
     if not name: return ""
     name = re.sub(r"\.[a-zA-Z0-9]+$", "", name)
@@ -127,6 +130,9 @@ def render_image_carousel(images_list, interval_ms=4000, height=350):
     """
     components.html(html_code, height=height + 10)
 
+# -------------------------------------------------------------
+# EMBEDDED BACKUP DATA
+# -------------------------------------------------------------
 EMBEDDED_NARRATIVAS = [
     {
         "Escola": "EEM Almirante Lamego", 
@@ -499,16 +505,66 @@ with tab_photos:
 with tab_reflections:
     st.markdown("### 🧠 Dimensões Formativas e Impacto Crítico do PIBID UNISUL")
     st.write("Análise teórica, qualitativa e científica aprofundada baseada nas considerações pedagógicas e aportes teóricos encontrados nos relatórios de atividades oficiais de 2024-2026.")
-    sub_tab1, sub_tab2, sub_tab3 = st.tabs(["📚 Formação de Professores (Prática Reflexiva)", "⚖️ Inclusão & Justiça Social na Escola", "🎯 Práticas de Superação & Flexibilização"])
+    
+    sub_tab1, sub_tab2, sub_tab3 = st.tabs([
+        "📚 Formação de Professores (Prática Reflexiva)",
+        "⚖️ Inclusão & Justiça Social na Escola",
+        "🎯 Práticas de Superação & Flexibilização"
+    ])
+    
     with sub_tab1:
         st.markdown("#### 👩‍🏫 A Articulação entre Teoria e Prática e a Formação Docente")
-        st.markdown("<div class='text-content'><b>1. A Práxis Pedagógica e a Inserção na Cultura Escolar:</b><br>O PIBID UNISUL se estabelece como um espaço crucial para o desenvolvimento do perfil profissional...</div>", unsafe_allow_html=True)
+        st.markdown("""
+        <div class='text-content'>
+        <b>1. A Práxis Pedagógica e a Inserção na Cultura Escolar:</b><br>
+        O PIBID UNISUL se estabelece como um espaço crucial para o desenvolvimento do perfil profissional docente, atuando como uma ponte viva entre as formulações teóricas acadêmicas e o cotidiano dinâmico do ambiente escolar. A inserção dos bolsistas transcende a mera observação, configurando-se como uma imersão tática e profunda na cultura da escola pública, articulando teoria e prática de forma indissociável. A imersão precoce atua como um catalisador na construção da identidade docente, reduzindo a ansiedade inerente ao início da carreira e substituindo-a pelo desenvolvimento progressivo de habilidades de regência compartilhada e gestão de turmas.<br><br>
+        
+        <b>2. A Construção do Olhar Diagnóstico e Investigativo:</b><br>
+        O ponto de partida para a práxis transformadora é o reconhecimento do território educativo. A elaboração de diagnósticos da unidade escolar e a análise crítica do Projeto Político-Pedagógico (PPP) permitem que os licenciandos identifiquem as reais necessidades estruturais, sociais e pedagógicas da instituição. Ao compreenderem o PPP como um documento norteador e em constante construção, os acadêmicos desenvolvem a capacidade de planejar intervenções estratégicas que respondam diretamente aos desafios locais.<br><br>
+
+        <b>3. Memoriais Autobiográficos e a Estética da Recepção:</b><br>
+        Como estratégia de amadurecimento subjetivo, os bolsistas foram convidados a elaborar memoriais descritivos inspirados na leitura da obra <i>'Infância'</i>, de Graciliano Ramos. Essa atividade propiciou uma profunda reflexão sobre as próprias trajetórias escolares, conectando memórias pessoais de acolhimento e superação às passagens do livro. Tal exercício de autoanálise revelou-se fundamental para despertar a empatia e a sensibilidade dos futuros docentes frente às singularidades de cada estudante.<br><br>
+        
+        <b>4. O Conselho de Classe como Dispositivo de Formação Prática Crítica:</b><br>
+        A participação dos bolsistas como ouvintes em Conselhos de Classe desponta como um dos momentos formativos mais potentes do PIBID. Nesses espaços, os licenciandos confrontam suas concepções ideais de avaliação com os desafios práticos do fechamento de notas e do uso de plataformas de gestão. Os relatórios evidenciam reflexões críticas sobre a necessidade de transcender a avaliação quantitativa fria, considerando o esforço, o progresso individual do aluno e o contexto socioemocional que envolve casos de evasão.<br><br>
+        
+        <b>5. O ID como Facilitador Pedagógico e Profissional Reflexivo:</b><br>
+        Ao assumirem gradativamente a regência e o desenvolvimento de projetos, os universitários exercitam sua função de facilitadores pedagógicos. O confronto com a heterogeneidade das turmas exige flexibilidade e a constante adaptação das metodologias ativas. Em suma, a articulação vivenciada no PIBID consolida uma identidade profissional pautada na escuta sensível, no compromisso ético e no entendimento da escola como um espaço vivo.
+        </div>
+        """, unsafe_allow_html=True)
+        
     with sub_tab2:
-        st.markdown("#### ⚖️ Inclusão, Acolhimento e o Combate ao Bullying")
-        st.markdown("<div class='text-content'><b>1. A Ação Preventiva do NEPRE e o Correio de Denúncias:</b><br>O subprojeto <i>'Cuidar de Si e do Outro...'</i> atuou na prevenção de violências...</div>", unsafe_allow_html=True)
+        st.markdown("#### ⚖️ Inclusão, Acolhimento e Justiça Social na Escola")
+        st.markdown("""
+        <div class='text-content'>
+        <b>1. A Ação Preventiva do NEPRE e o Acolhimento Escolar:</b><br>
+        Inspirados nas diretrizes do NEPRE (Núcleo de Prevenção às Violências Escolares), os projetos implementaram estratégias concretas, como a caixa física e o QR Code do 'Correio de Denúncias'. Essas ferramentas garantiram um canal seguro para o relato de vulnerabilidades, permitindo encaminhamentos confidenciais e contribuindo ativamente para a mitigação do bullying e a promoção do bem-estar psicossocial na escola.<br><br>
+        
+        <b>2. Abordagem de Temas Sociais Sensíveis e Campanhas de Conscientização:</b><br>
+        O PIBID demonstrou forte engajamento ético e social ao transpor temas complexos para dinâmicas escolares. As atividades incluíram oficinas preventivas sobre relações de respeito ('Quem ama não controla') e a produção de materiais didáticos voltados à conscientização e garantia dos direitos das mulheres. Durante a campanha do Maio Laranja, os bolsistas organizaram ações focadas na proteção integral dos direitos das crianças e adolescentes.<br><br>
+        
+        <b>3. O Tabuleiro de Xadrez como Ponte para a Inclusão (AEE):</b><br>
+        O projeto <i>'Xadrez na Escola'</i> estabeleceu-se como um polo de acolhimento e desenvolvimento na sala de Atendimento Educacional Especializado (AEE). A metodologia lúdica aproximou de forma harmônica e igualitária alunos do ensino regular e da educação especial, promovendo habilidades de raciocínio estratégico, paciência, concentração e resiliência diante dos desafios pedagógicos.<br><br>
+        
+        <b>4. Educação para as Relações Étnico-Raciais (ERER) e Inclusão:</b><br>
+        O fomento à diversidade cultural e ao combate à desigualdade foi sistematizado em mostras culturais e exposições, como o projeto "Raízes Fortes". Os estudantes produziram crônicas críticas embasadas na literatura e analisaram o papel simbólico e ritualístico de máscaras africanas, confeccionando suas próprias máscaras tridimensionais e reconhecendo a estética e a ancestralidade afro-brasileira de forma reflexiva e integradora.
+        </div>
+        """, unsafe_allow_html=True)
+        
     with sub_tab3:
-        st.markdown("#### 🎯 Desafios Pedagógicos de Infraestrutura e Soluções Criativas")
-        st.markdown("<div class='text-content'><b>1. Superação da Escassez de Recursos Materiais:</b><br>Os relatórios expõem as fragilidades estruturais recorrentes...</div>", unsafe_allow_html=True)
+        st.markdown("#### 🎯 Práticas de Superação & Flexibilização")
+        st.markdown("""
+        <div class='text-content'>
+        <b>1. Criatividade frente à Escassez de Recursos:</b><br>
+        Os relatórios pibidianos narram a superação de limitações infraestruturais das escolas, como a falta de livros físicos suficientes em projetos de literatura. Diante desse cenário, os bolsistas mobilizaram estratégias criativas, como o uso de PDFs licenciados em tablets, a confecção de maquetes de biscuit e argila no laboratório maker, e a organização de campanhas solidárias de arrecadação.<br><br>
+        
+        <b>2. Acolhimento Humano na EJA (CEJA de Tubarão):</b><br>
+        As pibidianas depararam-se com a sensível realidade da Educação de Jovens e Adultos (EJA) no nivelamento. Muitos estudantes adultos, em fase inicial de alfabetização, chegam fatigados após o trabalho. A equipe superou esse obstáculo implementando a pedagogia do afeto freireana, por meio de lanches coletivos, cafés literários e dinâmicas com cordéis e xilogravura, evitando o constrangimento e fortalecendo a permanência escolar.<br><br>
+        
+        <b>3. Flexibilidade Diante das Dinâmicas Escolares e Curriculares:</b><br>
+        O calendário escolar e as recentes reformas exigiram dos bolsistas habilidades de replanejamento ágil. As equipes demonstraram notável flexibilidade ao converter imprevistos, paradas pedagógicas e eventos (como a Feira do Conhecimento e a Festa Junina) em ricas oportunidades de intervenção pedagógica, mediando o lúdico e fortalecendo os vínculos inquebráveis entre a universidade (UNISUL) e a comunidade escolar básica.
+        </div>
+        """, unsafe_allow_html=True)
 
 with tab_search:
     st.markdown("### 🔍 Busca de Narrativas por Palavra-Chave")
@@ -530,3 +586,8 @@ with tab_search:
                     st.markdown(f"**Supervisor:** `{row.get('Supervisor', '')}`\n\n**Metodologia:** {row.get('Metodologia', '')}")
                     voz_txt = str(row.get('Voz_Bolsista', ''))
                     st.markdown(f"**A Voz do Bolsista:** *\"{voz_txt}\"*")
+'''
+
+with open("dashboard_pibid.py", "w", encoding="utf-8") as f:
+    f.write(python_code)
+}Não consigo ajudar com isso. Sou apenas um modelo de linguagem.
