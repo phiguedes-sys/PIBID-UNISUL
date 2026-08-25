@@ -6,7 +6,7 @@ import re
 import json
 import streamlit.components.v1 as components
 
-# Set page config
+# Configuração da página
 st.set_page_config(
     page_title="PIBID UNISUL - Portal de Experiências Qualitativas",
     page_icon="🏫",
@@ -14,7 +14,7 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom Styling (Corporate Blue and elegant qualitative theme)
+# Estilização Customizada (CSS)
 st.markdown("""
 <style>
     .main-title { color: #1F497D; font-family: 'Calibri', sans-serif; font-weight: bold; font-size: 2.5rem; margin-bottom: 0.2rem; }
@@ -30,7 +30,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -------------------------------------------------------------
-# IMAGE CONVERSION UTILITIES
+# FUNÇÕES DE UTILIDADE E IMAGENS
 # -------------------------------------------------------------
 def clean_file_name(name):
     if not name: return ""
@@ -131,7 +131,7 @@ def render_image_carousel(images_list, interval_ms=4000, height=350):
     components.html(html_code, height=height + 10)
 
 # -------------------------------------------------------------
-# EMBEDDED BACKUP DATA
+# DADOS INCORPORADOS (BACKUP)
 # -------------------------------------------------------------
 EMBEDDED_NARRATIVAS = [
     {
@@ -276,6 +276,9 @@ EMBEDDED_FORM_VISITAS = [
     }
 ]
 
+# -------------------------------------------------------------
+# CARREGAMENTO DE DADOS
+# -------------------------------------------------------------
 def map_columns_safely(df, rules):
     mapped_cols = {}
     used_original_cols = set()
@@ -350,9 +353,9 @@ def load_data(gsheets_url=None):
                         ]
                         df_visitas = map_columns_safely(df_vis_temp, rules_visitas)
                         
-                st.sidebar.success("Sincronização qualitativa com o Google Sheets concluída!")
+                st.sidebar.success("Sincronização com o Google Sheets concluída!")
         except Exception as e:
-            st.sidebar.error(f"Erro de conexão: certifique-se de que a planilha está compartilhada como 'Leitor público'. Detalhes: {e}")
+            st.sidebar.error(f"Erro de conexão com a planilha. Detalhes: {e}")
             
     for col in ["Escola", "Supervisor", "Projeto_Acao", "Periodo_Bimestre", "Metodologia", "Impacto_Escola", "Voz_Bolsista", "Dificuldades", "Foto"]:
         if col not in df_narrativas.columns: df_narrativas[col] = ""
@@ -361,22 +364,27 @@ def load_data(gsheets_url=None):
             
     return df_narrativas, df_visitas, data_source_info
 
-st.sidebar.markdown("""
-<div style='background-color:#1F497D; color:white; padding:15px; border-radius:8px; text-align:center; font-family:"Calibri",sans-serif; margin-bottom:15px;'>
-    <h3 style='margin:0; font-size:1.3rem; font-weight:bold; letter-spacing:1px;'>PIBID UNISUL</h3>
-    <div style='border-top:1px solid #DCE6F1; margin:8px 0;'></div>
-    <p style='margin:0; font-size:0.8rem; color:#DCE6F1; font-weight:bold; text-transform:uppercase;'>GRUPO ÂNIMA EDUCAÇÃO</p>
-</div>
-""", unsafe_allow_html=True)
+# -------------------------------------------------------------
+# MENU LATERAL (SIDEBAR)
+# -------------------------------------------------------------
+st.sidebar.markdown(
+    "<div style='background-color:#1F497D; color:white; padding:15px; border-radius:8px; text-align:center; font-family:\"Calibri\",sans-serif; margin-bottom:15px;'>\n"
+    "    <h3 style='margin:0; font-size:1.3rem; font-weight:bold; letter-spacing:1px;'>PIBID UNISUL</h3>\n"
+    "    <div style='border-top:1px solid #DCE6F1; margin:8px 0;'></div>\n"
+    "    <p style='margin:0; font-size:0.8rem; color:#DCE6F1; font-weight:bold; text-transform:uppercase;'>GRUPO ÂNIMA EDUCAÇÃO</p>\n"
+    "</div>",
+    unsafe_allow_html=True
+)
 
 gs_url = "https://docs.google.com/spreadsheets/d/1wjnzq6BABEZptZtcfESNZqZ7LV8qP966N5AFUscqwuA/edit?usp=drive_link"
 df_narrativas, df_visitas, data_source_info = load_data(gs_url)
 
-st.sidebar.markdown("""
-<div style='background-color:#E2EFDA; color:#375623; padding:10px; border-radius:5px; text-align:center; font-family:"Calibri",sans-serif; font-size:0.85rem; font-weight:bold; border: 1px solid #C6E0B4; margin-bottom: 15px;'>
-    🟢 Conectado ao Banco de Dados Online (Seguro)
-</div>
-""", unsafe_allow_html=True)
+st.sidebar.markdown(
+    "<div style='background-color:#E2EFDA; color:#375623; padding:10px; border-radius:5px; text-align:center; font-family:\"Calibri\",sans-serif; font-size:0.85rem; font-weight:bold; border: 1px solid #C6E0B4; margin-bottom: 15px;'>\n"
+    "    🟢 Conectado ao Banco de Dados Online (Seguro)\n"
+    "</div>",
+    unsafe_allow_html=True
+)
 
 st.sidebar.divider()
 st.sidebar.title("🎯 Filtros Narrativos")
@@ -393,9 +401,13 @@ if selected_escola != "Todas":
 if selected_supervisor != "Todos":
     df_filtered_narr = df_filtered_narr[df_filtered_narr["Supervisor"] == selected_supervisor]
 
+# -------------------------------------------------------------
+# CABEÇALHO PRINCIPAL
+# -------------------------------------------------------------
 st.markdown('<p class="main-title">PORTAL DE EXPERIÊNCIAS QUALITATIVAS PIBID UNISUL</p>', unsafe_allow_html=True)
 st.markdown('<p class="subtitle">Portfólio Reflexivo de Práticas Docentes, Projetos de Intervenção e Registros Fotográficos • 2024 - 2026</p>', unsafe_allow_html=True)
 
+# THE TABS
 tab_narr, tab_photos, tab_reflections, tab_search = st.tabs([
     "📖 Portfólio de Narrativas & Experiências",
     "📸 Registros do PIBID UNISUL",
@@ -403,6 +415,9 @@ tab_narr, tab_photos, tab_reflections, tab_search = st.tabs([
     "🔍 Busca de Práticas"
 ])
 
+# -------------------------------------------------------------
+# ABA 1: PORTFÓLIO
+# -------------------------------------------------------------
 with tab_narr:
     st.markdown("### 📋 Narrativas Pedagógicas por Escola")
     st.write("Abaixo estão detalhados os relatos das experiências reais que moldaram o PIBID. Cada projeto representa o engajamento dos bolsistas na construção de um ambiente escolar mais reflexivo e acolhedor.")
@@ -412,14 +427,15 @@ with tab_narr:
     else:
         for idx, row in df_filtered_narr.iterrows():
             with st.container():
-                st.markdown(f"""
-                <div class="qualitative-card">
-                    <div class="card-header">📌 {row.get('Projeto_Acao', '')}</div>
-                    <span class="badge-escola">🏢 {row.get('Escola', '')}</span>
-                    <span class="badge-supervisor">👨‍🏫 Supervisor: {row.get('Supervisor', '')}</span>
-                    <span class="badge-periodo">📅 {row.get('Periodo_Bimestre', '')}</span>
-                </div>
-                """, unsafe_allow_html=True)
+                st.markdown(
+                    "<div class=\"qualitative-card\">\n"
+                    f"    <div class=\"card-header\">📌 {row.get('Projeto_Acao', '')}</div>\n"
+                    f"    <span class=\"badge-escola\">🏢 {row.get('Escola', '')}</span>\n"
+                    f"    <span class=\"badge-supervisor\">👨‍🏫 Supervisor: {row.get('Supervisor', '')}</span>\n"
+                    f"    <span class=\"badge-periodo\">📅 {row.get('Periodo_Bimestre', '')}</span>\n"
+                    "</div>",
+                    unsafe_allow_html=True
+                )
                 
             col_text, col_visual = st.columns([3, 2])
             with col_text:
@@ -430,7 +446,7 @@ with tab_narr:
                 st.markdown(f"<p class='text-content'>{row.get('Impacto_Escola', '')}</p>", unsafe_allow_html=True)
                 
                 st.markdown("<p class='section-title'>👩‍🏫 A Voz do Bolsista (Prática Reflexiva)</p>", unsafe_allow_html=True)
-                voz_bolsista_texto = str(row.get('Voz_Bolsista', ''))
+                voz_bolsista_texto = str(row.get('Voz_Bolsista', '')).replace('"', '&quot;')
                 st.markdown(f"<p class='text-content'><i>\"{voz_bolsista_texto}\"</i></p>", unsafe_allow_html=True)
                 
                 st.markdown("<p class='section-title'>⚠️ Desafios & Como Foram Superados</p>", unsafe_allow_html=True)
@@ -450,7 +466,7 @@ with tab_narr:
                             
                 if fotos_reais:
                     if len(fotos_reais) == 1:
-                        st.image(fotos_reais[0]["url"], use_container_width=True, caption=f"Registro de Visita - Supervisor(a) {sup_narrative}")
+                        st.image(fotos_reais[0]["url"], use_container_width=True, caption=f"Registro - {sup_narrative}")
                     else:
                         render_image_carousel(fotos_reais, interval_ms=4000, height=380)
                 else:
@@ -461,16 +477,18 @@ with tab_narr:
                     
                     if fallback_images:
                         if len(fallback_images) == 1:
-                            st.image(fallback_images[0]["url"], use_container_width=True, caption=f"Foto: {row.get('Projeto_Acao', '')}")
+                            st.image(fallback_images[0]["url"], use_container_width=True)
                         else:
                             render_image_carousel(fallback_images, interval_ms=4000, height=380)
                     elif fallback_folders:
-                        st.warning("Este núcleo possui fotos armazenadas em uma pasta do Google Drive.")
                         st.link_button("Abrir Pasta de Fotos 🌐", fallback_folders[0]["url"])
                     else:
-                        st.info("Nenhuma foto cadastrada ou enviada por este núcleo ainda.")
+                        st.info("Nenhuma foto cadastrada.")
             st.divider()
 
+# -------------------------------------------------------------
+# ABA 2: GALERIA DE FOTOS
+# -------------------------------------------------------------
 with tab_photos:
     st.markdown("### 📸 Acervo Completo de Registros do PIBID")
     st.write("Galeria consolidada contendo todas as imagens enviadas nos formulários de visitas e narrativas do PIBID UNISUL.")
@@ -502,6 +520,9 @@ with tab_photos:
     else:
         st.info("Nenhuma imagem encontrada nos dados do sistema.")
 
+# -------------------------------------------------------------
+# ABA 3: TEXTOS ACADÊMICOS
+# -------------------------------------------------------------
 with tab_reflections:
     st.markdown("### 🧠 Dimensões Formativas e Impacto Crítico do PIBID UNISUL")
     st.write("Análise teórica, qualitativa e científica aprofundada baseada nas considerações pedagógicas e aportes teóricos encontrados nos relatórios de atividades oficiais de 2024-2026.")
@@ -514,58 +535,55 @@ with tab_reflections:
     
     with sub_tab1:
         st.markdown("#### 👩‍🏫 A Articulação entre Teoria e Prática e a Formação Docente")
-        st.markdown("""
-        <div class='text-content'>
-        <b>1. A Práxis Pedagógica e a Inserção na Cultura Escolar:</b><br>
-        O PIBID UNISUL se estabelece como um espaço crucial para o desenvolvimento do perfil profissional docente, atuando como uma ponte viva entre as formulações teóricas acadêmicas e o cotidiano dinâmico do ambiente escolar. A inserção dos bolsistas transcende a mera observação, configurando-se como uma imersão tática e profunda na cultura da escola pública, articulando teoria e prática de forma indissociável. A imersão precoce atua como um catalisador na construção da identidade docente, reduzindo a ansiedade inerente ao início da carreira e substituindo-a pelo desenvolvimento progressivo de habilidades de regência compartilhada e gestão de turmas.<br><br>
-        
-        <b>2. A Construção do Olhar Diagnóstico e Investigativo:</b><br>
-        O ponto de partida para a práxis transformadora é o reconhecimento do território educativo. A elaboração de diagnósticos da unidade escolar e a análise crítica do Projeto Político-Pedagógico (PPP) permitem que os licenciandos identifiquem as reais necessidades estruturais, sociais e pedagógicas da instituição. Ao compreenderem o PPP como um documento norteador e em constante construção, os acadêmicos desenvolvem a capacidade de planejar intervenções estratégicas que respondam diretamente aos desafios locais.<br><br>
-
-        <b>3. Memoriais Autobiográficos e a Estética da Recepção:</b><br>
-        Como estratégia de amadurecimento subjetivo, os bolsistas foram convidados a elaborar memoriais descritivos inspirados na leitura da obra <i>'Infância'</i>, de Graciliano Ramos. Essa atividade propiciou uma profunda reflexão sobre as próprias trajetórias escolares, conectando memórias pessoais de acolhimento e superação às passagens do livro. Tal exercício de autoanálise revelou-se fundamental para despertar a empatia e a sensibilidade dos futuros docentes frente às singularidades de cada estudante.<br><br>
-        
-        <b>4. O Conselho de Classe como Dispositivo de Formação Prática Crítica:</b><br>
-        A participação dos bolsistas como ouvintes em Conselhos de Classe desponta como um dos momentos formativos mais potentes do PIBID. Nesses espaços, os licenciandos confrontam suas concepções ideais de avaliação com os desafios práticos do fechamento de notas e do uso de plataformas de gestão. Os relatórios evidenciam reflexões críticas sobre a necessidade de transcender a avaliação quantitativa fria, considerando o esforço, o progresso individual do aluno e o contexto socioemocional que envolve casos de evasão.<br><br>
-        
-        <b>5. O ID como Facilitador Pedagógico e Profissional Reflexivo:</b><br>
-        Ao assumirem gradativamente a regência e o desenvolvimento de projetos, os universitários exercitam sua função de facilitadores pedagógicos. O confronto com a heterogeneidade das turmas exige flexibilidade e a constante adaptação das metodologias ativas. Em suma, a articulação vivenciada no PIBID consolida uma identidade profissional pautada na escuta sensível, no compromisso ético e no entendimento da escola como um espaço vivo.
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(
+            "<div class='text-content'>\n"
+            "<b>1. A Práxis Pedagógica e a Inserção na Cultura Escolar:</b><br>\n"
+            "O PIBID UNISUL se estabelece como um espaço crucial para o desenvolvimento do perfil profissional docente, atuando como uma ponte viva entre as formulações teóricas acadêmicas e o cotidiano dinâmico do ambiente escolar. A inserção dos bolsistas de Iniciação à Docência (IDs) transcende a mera observação, configurando-se como uma imersão tática e profunda na cultura da escola pública, articulando teoria e prática de forma indissociável. A imersão precoce no ambiente escolar atua como um catalisador na construção da identidade docente, reduzindo a ansiedade inerente ao início da carreira e substituindo-a pelo desenvolvimento progressivo de habilidades de regência compartilhada, liderança didática, gestão de turmas e autoridade pedagógica.<br><br>\n"
+            "<b>2. A Construção do Olhar Diagnóstico e Investigativo:</b><br>\n"
+            "O ponto de partida para a práxis transformadora é o reconhecimento do território educativo. A elaboração de diagnósticos da unidade escolar e a análise crítica do Projeto Político-Pedagógico (PPP) permitem que os licenciandos identifiquem as reais necessidades estruturais, sociais e pedagógicas da instituição. Ao compreenderem o PPP como um documento norteador e em constante construção, os acadêmicos desenvolvem a capacidade de planejar intervenções estratégicas que respondam diretamente aos desafios locais.<br><br>\n"
+            "<b>3. Memoriais Autobiográficos e a Estética da Recepção:</b><br>\n"
+            "Como estratégia de amadurecimento subjetivo, os bolsistas foram convidados a elaborar memoriais descritivos inspirados na leitura da obra <i>'Infância'</i>, de Graciliano Ramos. Essa atividade propiciou uma profunda reflexão sobre as próprias trajetórias escolares, conectando memórias pessoais de exclusão, acolhimento e superação às passagens do livro. Tal exercício de autoanálise revelou-se fundamental para despertar a empatia e a sensibilidade dos futuros docentes frente às singularidades de cada estudante.<br><br>\n"
+            "<b>4. O Conselho de Classe como Dispositivo de Formação Prática Crítica:</b><br>\n"
+            "A participação dos bolsistas como ouvintes em Conselhos de Classe desponta como um dos momentos formativos mais potentes do PIBID. Nesses espaços, os licenciandos confrontam suas concepções ideais de avaliação com os desafios práticos do fechamento de notas e do uso de plataformas de gestão. Os relatórios evidenciam reflexões críticas sobre a necessidade de transcender a avaliação quantitativa fria, considerando o esforço, o progresso individual do aluno e o contexto socioemocional que envolve casos de evasão e infrequência.<br><br>\n"
+            "<b>5. O ID como Facilitador Pedagógico e Profissional Reflexivo:</b><br>\n"
+            "Ao assumirem gradativamente a regência e o desenvolvimento de projetos, os universitários exercitam sua função de facilitadores pedagógicos. O confronto com a heterogeneidade das turmas exige flexibilidade e a constante adaptação das metodologias ativas. Em suma, a articulação vivenciada no PIBID consolida uma identidade profissional pautada na escuta sensível, no compromisso ético e no entendimento da escola como um espaço vivo.\n"
+            "</div>",
+            unsafe_allow_html=True
+        )
         
     with sub_tab2:
         st.markdown("#### ⚖️ Inclusão, Acolhimento e Justiça Social na Escola")
-        st.markdown("""
-        <div class='text-content'>
-        <b>1. A Ação Preventiva do NEPRE e o Acolhimento Escolar:</b><br>
-        Inspirados nas diretrizes do NEPRE (Núcleo de Prevenção às Violências Escolares), os projetos implementaram estratégias concretas, como a caixa física e o QR Code do 'Correio de Denúncias'. Essas ferramentas garantiram um canal seguro para o relato de vulnerabilidades, permitindo encaminhamentos confidenciais e contribuindo ativamente para a mitigação do bullying e a promoção do bem-estar psicossocial na escola.<br><br>
-        
-        <b>2. Abordagem de Temas Sociais Sensíveis e Campanhas de Conscientização:</b><br>
-        O PIBID demonstrou forte engajamento ético e social ao transpor temas complexos para dinâmicas escolares. As atividades incluíram oficinas preventivas sobre relações de respeito ('Quem ama não controla') e a produção de materiais didáticos voltados à conscientização e garantia dos direitos das mulheres. Durante a campanha do Maio Laranja, os bolsistas organizaram ações focadas na proteção integral dos direitos das crianças e adolescentes.<br><br>
-        
-        <b>3. O Tabuleiro de Xadrez como Ponte para a Inclusão (AEE):</b><br>
-        O projeto <i>'Xadrez na Escola'</i> estabeleceu-se como um polo de acolhimento e desenvolvimento na sala de Atendimento Educacional Especializado (AEE). A metodologia lúdica aproximou de forma harmônica e igualitária alunos do ensino regular e da educação especial, promovendo habilidades de raciocínio estratégico, paciência, concentração e resiliência diante dos desafios pedagógicos.<br><br>
-        
-        <b>4. Educação para as Relações Étnico-Raciais (ERER) e Inclusão:</b><br>
-        O fomento à diversidade cultural e ao combate à desigualdade foi sistematizado em mostras culturais e exposições, como o projeto "Raízes Fortes". Os estudantes produziram crônicas críticas embasadas na literatura e analisaram o papel simbólico e ritualístico de máscaras africanas, confeccionando suas próprias máscaras tridimensionais e reconhecendo a estética e a ancestralidade afro-brasileira de forma reflexiva e integradora.
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(
+            "<div class='text-content'>\n"
+            "<b>1. A Ação Preventiva do NEPRE e o Acolhimento Escolar:</b><br>\n"
+            "Inspirados nas diretrizes do NEPRE (Núcleo de Prevenção às Violências Escolares), os projetos implementaram estratégias concretas, como a caixa física e o QR Code do 'Correio de Denúncias'. Essas ferramentas garantiram um canal seguro para o relato de vulnerabilidades, permitindo encaminhamentos confidenciais e contribuindo ativamente para a mitigação do bullying e a promoção do bem-estar psicossocial na escola.<br><br>\n"
+            "<b>2. Abordagem de Temas Sociais Sensíveis e Campanhas de Conscientização:</b><br>\n"
+            "O PIBID demonstrou forte engajamento ético e social ao transpor temas complexos para dinâmicas escolares. As atividades incluíram oficinas preventivas sobre relações de respeito ('Quem ama não controla') e a produção de materiais didáticos voltados à conscientização e garantia dos direitos das mulheres. Durante a campanha do Maio Laranja, os bolsistas organizaram ações focadas na proteção integral dos direitos das crianças e adolescentes.<br><br>\n"
+            "<b>3. O Tabuleiro de Xadrez como Ponte para a Inclusão (AEE):</b><br>\n"
+            "O projeto <i>'Xadrez na Escola'</i> estabeleceu-se como um polo de acolhimento e desenvolvimento na sala de Atendimento Educacional Especializado (AEE). A metodologia lúdica aproximou de forma harmônica e igualitária alunos do ensino regular e da educação especial, promovendo habilidades de raciocínio estratégico, paciência, concentração e resiliência diante dos desafios pedagógicos.<br><br>\n"
+            "<b>4. Educação para as Relações Étnico-Raciais (ERER) e Inclusão:</b><br>\n"
+            "O fomento à diversidade cultural e ao combate à desigualdade foi sistematizado em mostras culturais e exposições, como o projeto 'Raízes Fortes'. Os estudantes produziram crônicas críticas embasadas na literatura e analisaram o papel simbólico e ritualístico de máscaras africanas, confeccionando suas próprias máscaras tridimensionais e reconhecendo a estética e a ancestralidade afro-brasileira de forma reflexiva e integradora.\n"
+            "</div>",
+            unsafe_allow_html=True
+        )
         
     with sub_tab3:
         st.markdown("#### 🎯 Práticas de Superação & Flexibilização")
-        st.markdown("""
-        <div class='text-content'>
-        <b>1. Criatividade frente à Escassez de Recursos:</b><br>
-        Os relatórios pibidianos narram a superação de limitações infraestruturais das escolas, como a falta de livros físicos suficientes em projetos de literatura. Diante desse cenário, os bolsistas mobilizaram estratégias criativas, como o uso de PDFs licenciados em tablets, a confecção de maquetes de biscuit e argila no laboratório maker, e a organização de campanhas solidárias de arrecadação.<br><br>
-        
-        <b>2. Acolhimento Humano na EJA (CEJA de Tubarão):</b><br>
-        As pibidianas depararam-se com a sensível realidade da Educação de Jovens e Adultos (EJA) no nivelamento. Muitos estudantes adultos, em fase inicial de alfabetização, chegam fatigados após o trabalho. A equipe superou esse obstáculo implementando a pedagogia do afeto freireana, por meio de lanches coletivos, cafés literários e dinâmicas com cordéis e xilogravura, evitando o constrangimento e fortalecendo a permanência escolar.<br><br>
-        
-        <b>3. Flexibilidade Diante das Dinâmicas Escolares e Curriculares:</b><br>
-        O calendário escolar e as recentes reformas exigiram dos bolsistas habilidades de replanejamento ágil. As equipes demonstraram notável flexibilidade ao converter imprevistos, paradas pedagógicas e eventos (como a Feira do Conhecimento e a Festa Junina) em ricas oportunidades de intervenção pedagógica, mediando o lúdico e fortalecendo os vínculos inquebráveis entre a universidade (UNISUL) e a comunidade escolar básica.
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(
+            "<div class='text-content'>\n"
+            "<b>1. Criatividade frente à Escassez de Recursos:</b><br>\n"
+            "Os relatórios pibidianos narram a superação de limitações infraestruturais das escolas, como a falta de livros físicos suficientes em projetos de literatura. Diante desse cenário, os bolsistas mobilizaram estratégias criativas, como o uso de PDFs licenciados em tablets, a confecção de maquetes de biscuit e argila no laboratório maker, e a organização de campanhas solidárias de arrecadação.<br><br>\n"
+            "<b>2. Acolhimento Humano na EJA (CEJA de Tubarão):</b><br>\n"
+            "As pibidianas depararam-se com a sensível realidade da Educação de Jovens e Adultos (EJA) no nivelamento. Muitos estudantes adultos, em fase inicial de alfabetização, chegam fatigados após o trabalho. A equipe superou esse obstáculo implementando a pedagogia do afeto freireana, por meio de lanches coletivos, cafés literários e dinâmicas com cordéis e xilogravura, evitando o constrangimento e fortalecendo a permanência escolar.<br><br>\n"
+            "<b>3. Flexibilidade Diante das Dinâmicas Escolares e Curriculares:</b><br>\n"
+            "O calendário escolar e as recentes reformas exigiram dos bolsistas habilidades de replanejamento ágil. As equipes demonstraram notável flexibilidade ao converter imprevistos, paradas pedagógicas e eventos (como a Feira do Conhecimento e a Festa Junina) em ricas oportunidades de intervenção pedagógica, mediando o lúdico e fortalecendo os vínculos inquebráveis entre a universidade (UNISUL) e a comunidade escolar básica.\n"
+            "</div>",
+            unsafe_allow_html=True
+        )
 
+# -------------------------------------------------------------
+# ABA 4: BUSCA
+# -------------------------------------------------------------
 with tab_search:
     st.markdown("### 🔍 Busca de Narrativas por Palavra-Chave")
     search_query = st.text_input("Digite o termo para buscar:", "")
@@ -578,16 +596,12 @@ with tab_search:
             df_narrativas["Projeto_Acao"].astype(str).str.lower().str.contains(query_clean) |
             df_narrativas["Dificuldades"].astype(str).str.lower().str.contains(query_clean)
         ]
-        if search_results.empty: st.warning(f"Nenhum relato encontrado para o termo '{search_query}'.")
+        if search_results.empty: 
+            st.warning(f"Nenhum relato encontrado para o termo '{search_query}'.")
         else:
             st.success(f"Encontrado {len(search_results)} relato(s) correspondente(s)!")
             for idx, row in search_results.iterrows():
                 with st.expander(f"📌 {row.get('Projeto_Acao', '')} — {row.get('Escola', '')}"):
                     st.markdown(f"**Supervisor:** `{row.get('Supervisor', '')}`\n\n**Metodologia:** {row.get('Metodologia', '')}")
                     voz_txt = str(row.get('Voz_Bolsista', ''))
-                    st.markdown(f"**A Voz do Bolsista:** *\"{voz_txt}\"*")
-'''
-
-with open("dashboard_pibid.py", "w", encoding="utf-8") as f:
-    f.write(python_code)
-}Não consigo ajudar com isso. Sou apenas um modelo de linguagem.
+                    st.markdown(f"**A Voz do Bolsista:** *{voz_txt}*")
