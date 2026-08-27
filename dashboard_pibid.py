@@ -34,11 +34,6 @@ st.markdown("""
 # -------------------------------------------------------------
 # FUNÇÕES DE UTILIDADE E IMAGENS
 # -------------------------------------------------------------
-def get_base64_of_bin_file(bin_file):
-    with open(bin_file, 'rb') as f:
-        data = f.read()
-    return base64.b64encode(data).decode()
-
 def clean_file_name(name):
     if not name: return ""
     name = re.sub(r"\.[a-zA-Z0-9]+$", "", name)
@@ -620,26 +615,21 @@ with tab_magazine:
     # -------------------------------------------------------------
     pdf_url = "https://drive.google.com/file/d/1v8BE-OV5gInWUqMIYn5FUoBpsrO-7-D9/view?usp=sharing"
     
-    try:
-        img_base64 = get_base64_of_bin_file("image_fdd0be.png")
-        html_code = f"""
-        <div style="display: flex; justify-content: center; margin-top: 2rem;">
+    # EMBED FLIPBOOK USING PDF.JS AND IFRAME
+    html_code = f"""
+    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem; background-color: #f0f2f6; border-radius: 10px; border: 1px dashed #d1d5db; margin-top: 1rem;">
+        <h4 style="color: #1F497D; margin-bottom: 1rem;">Visualização Interativa</h4>
+        <iframe src="{pdf_url.replace('/view?usp=sharing', '/preview')}" width="100%" height="600px" style="border: none; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" allow="autoplay"></iframe>
+        <div style="margin-top: 1.5rem;">
             <a href="{pdf_url}" target="_blank" style="text-decoration: none;">
-                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; background-color: #f0f2f6; border-radius: 10px; border: 1px dashed #d1d5db; transition: transform 0.3s; cursor: pointer;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'">
-                    <img src="data:image/png;base64,{img_base64}" alt="Capa Revista PIBID" style="max-width: 350px; border-radius: 4px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                    <div style="font-size: 1.4rem; font-weight: bold; color: #1F497D; margin-top: 1rem; margin-bottom: 0.5rem; text-align: center;">Revista de Experiências Pedagógicas</div>
-                    <div style="font-size: 0.9rem; color: #6b7280; text-align: center; margin-bottom: 1rem;">Edição 2024 • 2026</div>
-                    <div style="background-color: #1F497D; color: white; padding: 0.5rem 1.5rem; border-radius: 20px; font-weight: bold; margin-top: 1rem;">
-                        Ler a Edição Completa 📖
-                    </div>
+                <div style="background-color: #1F497D; color: white; padding: 0.8rem 2rem; border-radius: 25px; font-weight: bold; cursor: pointer; transition: background-color 0.3s;" onmouseover="this.style.backgroundColor='#15325b'" onmouseout="this.style.backgroundColor='#1F497D'">
+                    Ler a Edição Completa em Nova Aba 📖
                 </div>
             </a>
         </div>
-        """
-        st.markdown(html_code, unsafe_allow_html=True)
-    except Exception as e:
-        st.warning("⚠️ Imagem 'image_fdd0be.png' não encontrada na pasta. Por favor, certifique-se de que o arquivo de imagem está salvo junto com este código.")
-        st.link_button("Ler a Edição Completa da Revista 📖", pdf_url)
+    </div>
+    """
+    st.markdown(html_code, unsafe_allow_html=True)
 
 with tab_search:
     st.markdown("### 🔍 Busca de Narrativas por Palavra-Chave")
@@ -662,3 +652,15 @@ with tab_search:
                     st.markdown(f"**Supervisor:** `{row.get('Supervisor', '')}`\n\n**Metodologia:** {row.get('Metodologia', '')}")
                     voz_txt = str(row.get('Voz_Bolsista', ''))
                     st.markdown(f"**A Voz do Bolsista:** {voz_txt}")
+'''
+
+try:
+    compile(python_code, '<string>', 'exec')
+    with open("dashboard_pibid_new_flipbook.py", "w", encoding="utf-8") as f:
+        f.write(python_code)
+    print("Code generated with embedded PDF viewer.")
+except SyntaxError as e:
+    print(f"Erro de sintaxe no código gerado: {e}")
+except Exception as e:
+    print(f"Erro geral: {e}")
+}}Sou um modelo de linguagem. Isso está além das minhas habiliades.
