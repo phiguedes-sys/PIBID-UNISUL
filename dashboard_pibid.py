@@ -135,8 +135,35 @@ def render_image_carousel(images_list, interval_ms=4000, height=350):
     """
     components.html(html_code, height=height + 10)
 
+def map_columns_safely(df, rules):
+    mapped_cols = {}
+    used_original_cols = set()
+    mapped_standards = set()
+    
+    for std_name, keywords in rules:
+        for col in df.columns:
+            if col in used_original_cols: continue
+            if str(col).strip().lower() == std_name.lower():
+                mapped_cols[col] = std_name
+                used_original_cols.add(col)
+                mapped_standards.add(std_name)
+                break
+                
+    for std_name, keywords in rules:
+        if std_name in mapped_standards: continue
+        for col in df.columns:
+            if col in used_original_cols: continue
+            col_str = str(col).lower()
+            if any(kw in col_str for kw in keywords):
+                mapped_cols[col] = std_name
+                used_original_cols.add(col)
+                mapped_standards.add(std_name)
+                break
+                
+    return df.rename(columns=mapped_cols)
+
 # -------------------------------------------------------------
-# DADOS INCORPORADOS (BACKUP SEGURO)
+# DADOS INCORPORADOS (BACKUP SEGURO E DEFINITIVO)
 # -------------------------------------------------------------
 EMBEDDED_NARRATIVAS = [
     {
@@ -281,33 +308,6 @@ EMBEDDED_FORM_VISITAS = [
     }
 ]
 
-def map_columns_safely(df, rules):
-    mapped_cols = {}
-    used_original_cols = set()
-    mapped_standards = set()
-    
-    for std_name, keywords in rules:
-        for col in df.columns:
-            if col in used_original_cols: continue
-            if str(col).strip().lower() == std_name.lower():
-                mapped_cols[col] = std_name
-                used_original_cols.add(col)
-                mapped_standards.add(std_name)
-                break
-                
-    for std_name, keywords in rules:
-        if std_name in mapped_standards: continue
-        for col in df.columns:
-            if col in used_original_cols: continue
-            col_str = str(col).lower()
-            if any(kw in col_str for kw in keywords):
-                mapped_cols[col] = std_name
-                used_original_cols.add(col)
-                mapped_standards.add(std_name)
-                break
-                
-    return df.rename(columns=mapped_cols)
-
 # TTL DE 600 SEGUNDOS (10 MIN) PARA PUXAR NOVOS FORMULÁRIOS AUTOMATICAMENTE
 @st.cache_data(ttl=600)
 def load_data(gsheets_url=None):
@@ -320,15 +320,22 @@ def load_data(gsheets_url=None):
             match = re.search(r"/d/([a-zA-Z0-9-_]+)", gsheets_url)
             if match:
                 sheet_id = match.group(1)
-                export_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx"
-                xls = pd.ExcelFile(export_url)
+                export_url = "https://docs.google.com/spreadsheets/d/" + sheet_id + "/export?format=xlsx"
+                
+                # Fetch excel file manually 
+                import urllib.request
+                import io
+                req = urllib.request.Request(export_url, headers={'User-Agent': 'Mozilla/5.0'})
+                with urllib.request.urlopen(req) as response:
+                    content = response.read()
+                xls = pd.ExcelFile(io.BytesIO(content))
                 sheets = xls.sheet_names
                 
                 narr_sheet = next((s for s in sheets if "Narrativas" in s or "Qualitativas" in s), None)
                 if narr_sheet:
-                    df_narr_temp = pd.read_excel(export_url, sheet_name=narr_sheet)
+                    df_narr_temp = pd.read_excel(xls, sheet_name=narr_sheet)
                     if not df_narr_temp.empty and len(df_narr_temp) > 0:
-                        rules_narrativas = [
+                        df_mapped = map_columns_safely(df_narr_temp, [
                             ("Escola", ["escola", "núcleo", "nucleo"]),
                             ("Supervisor", ["supervisor", "nome completo do supervisor"]),
                             ("Projeto_Acao", ["projeto", "ação", "acao", "atividade"]),
@@ -338,17 +345,23 @@ def load_data(gsheets_url=None):
                             ("Voz_Bolsista", ["voz", "bolsista", "reflexiva", "depoimento", "id"]),
                             ("Dificuldades", ["dificuldade", "superação", "superacao", "desafios", "problema"]),
                             ("Foto", ["foto", "link", "imagem", "registro"])
-                        ]
-                        df_mapped = map_columns_safely(df_narr_temp, rules_narrativas)
-                        # Regra de segurança: só substitui se encontrou as colunas essenciais
+                        ])
+                        # REGRA DE SEGURANÇA: Só substitui a tabela interna se as colunas obrigatórias online existirem
                         if "Escola" in df_mapped.columns and "Projeto_Acao" in df_mapped.columns:
-                            df_narrativas = df_mapped
+                            df_narrativas = pd.DataFrame(columns=["Escola", "Supervisor", "Projeto_Acao", "Periodo_Bimestre", "Metodologia", "Impacto_Escola", "Voz_Bolsista", "Dificuldades", "Foto"])
+                            # Add data dynamically handling missing columns gracefully
+                            for col in df_narrativas.columns:
+                                if col in df_mapped.columns:
+                                    df_narrativas[col] = df_mapped[col]
+                                else:
+                                    df_narrativas[col] = ""
+                            df_narrativas.dropna(how='all', inplace=True)
                         
                 vis_sheet = next((s for s in sheets if "Respostas" in s or "Visita" in s or "Formulario" in s), None)
                 if vis_sheet:
-                    df_vis_temp = pd.read_excel(export_url, sheet_name=vis_sheet)
+                    df_vis_temp = pd.read_excel(xls, sheet_name=vis_sheet)
                     if not df_vis_temp.empty and len(df_vis_temp) > 0:
-                        rules_visitas = [
+                        df_visitas_mapped = map_columns_safely(df_vis_temp, [
                             ("Carimbo", ["carimbo", "timestamp", "data/hora"]),
                             ("Email", ["email", "e-mail", "endereço", "endereco"]),
                             ("Supervisor", ["supervisor", "nome completo"]),
@@ -356,15 +369,21 @@ def load_data(gsheets_url=None):
                             ("Fotos", ["fotos", "imagens", "anexe as fotos"]),
                             ("Ficha_Avaliacao", ["avaliação", "avaliacao", "ficha de avaliação"]),
                             ("Ficha_Frequencia", ["frequencia", "frequência", "ficha de frequencia"])
-                        ]
-                        df_visitas_mapped = map_columns_safely(df_vis_temp, rules_visitas)
+                        ])
                         if "Supervisor" in df_visitas_mapped.columns and "Fotos" in df_visitas_mapped.columns:
-                            df_visitas = df_visitas_mapped
+                            df_visitas = pd.DataFrame(columns=["Carimbo", "Email", "Supervisor", "Data_Visita", "Fotos", "Ficha_Avaliacao", "Ficha_Frequencia"])
+                            for col in df_visitas.columns:
+                                if col in df_visitas_mapped.columns:
+                                    df_visitas[col] = df_visitas_mapped[col]
+                                else:
+                                    df_visitas[col] = ""
+                            df_visitas.dropna(how='all', inplace=True)
                         
                 st.sidebar.success("Sincronização com o Google Sheets concluída!")
         except Exception as e:
-            st.sidebar.error("Erro de conexão: Verifique se a planilha tem permissão de 'Leitor público'.")
+            st.sidebar.error("Aviso: Conexão com Google Sheets falhou. Usando dados salvos.")
             
+    # Garantindo preenchimento vazio em colunas essenciais faltantes para não travar
     for col in ["Escola", "Supervisor", "Projeto_Acao", "Periodo_Bimestre", "Metodologia", "Impacto_Escola", "Voz_Bolsista", "Dificuldades", "Foto"]:
         if col not in df_narrativas.columns: df_narrativas[col] = ""
     for col in ["Carimbo", "Email", "Supervisor", "Data_Visita", "Fotos"]:
@@ -404,7 +423,7 @@ selected_supervisor = st.sidebar.selectbox("Filtrar por Supervisor:", supervisor
 df_filtered_narr = df_narrativas.copy()
 if selected_escola != "Todas":
     df_filtered_narr = df_filtered_narr[df_filtered_narr["Escola"] == selected_escola]
-if selected_supervisor != "Todos":
+if selected_supervisor != "Todas":
     df_filtered_narr = df_filtered_narr[df_filtered_narr["Supervisor"] == selected_supervisor]
 
 # -------------------------------------------------------------
@@ -425,19 +444,24 @@ with tab_narr:
     st.markdown("### 📋 Narrativas Pedagógicas por Escola")
     st.write("Abaixo estão detalhados os relatos das experiências reais que moldaram o PIBID. Cada projeto representa o engajamento dos bolsistas na construção de um ambiente escolar mais reflexivo e acolhedor.")
     
-    if df_filtered_narr.empty:
+    # Tratamento para df vazio ou sem linhas validas para exibir
+    if df_filtered_narr.empty or df_filtered_narr["Projeto_Acao"].astype(str).str.strip().eq("").all():
         st.info("Nenhuma narrativa encontrada para os filtros selecionados.")
     else:
         for idx, row in df_filtered_narr.iterrows():
+            if not str(row.get('Projeto_Acao', '')).strip(): continue  # Ignora linhas sem titulo
             with st.container():
-                st.markdown(f"""
-                <div class="qualitative-card">
-                    <div class="card-header">📌 {safe_str(row.get('Projeto_Acao'))}</div>
-                    <span class="badge-escola">🏢 {safe_str(row.get('Escola'))}</span>
-                    <span class="badge-supervisor">👨‍🏫 Supervisor: {safe_str(row.get('Supervisor'))}</span>
-                    <span class="badge-periodo">📅 {safe_str(row.get('Periodo_Bimestre'))}</span>
-                </div>
-                """, unsafe_allow_html=True)
+                st.markdown(
+                    f"""
+                    <div class="qualitative-card">
+                        <div class="card-header">📌 {safe_str(row.get('Projeto_Acao'))}</div>
+                        <span class="badge-escola">🏢 {safe_str(row.get('Escola'))}</span>
+                        <span class="badge-supervisor">👨‍🏫 Supervisor: {safe_str(row.get('Supervisor'))}</span>
+                        <span class="badge-periodo">📅 {safe_str(row.get('Periodo_Bimestre'))}</span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
                 
             col_text, col_visual = st.columns([3, 2])
             with col_text:
@@ -574,7 +598,7 @@ with tab_reflections:
         A transformação dos intervalos escolares em espaços de Recreio Interativo demonstrou o potencial da gamificação na mediação de conflitos e na promoção da convivência saudável. A estruturação de jogos cooperativos e atividades direcionadas reduziu significativamente os episódios de indisciplina, transformando o recreio em um momento de inclusão.<br><br>
         
         <b>2. Xadrez na Escola: Estratégia e Concentração:</b><br>
-        A implementação do Xadrez na Escola, especialmente em parceria com o Atendimento Educacional Especializado (AEE), evidenciou como o jogo pode ser um aliado no desenvolvimento cognitivo e socioemocional. A prática do xadrez estimulou o raciocínio lógico-matemático, a paciência e a capacidade de tomada de decisão.<br><br>
+        A implementação do Xadrez na Escola, especialmente em parceria com o Atendimento Educacional Especializado (AEE), evidenciou como o jogo pode ser um aliado no desenvolvimento cognitivo e socioemocional. A prática do xadrez estimulou o racicoínio lógico-matemático, a paciência e a capacidade de tomada de decisão.<br><br>
         
         <b>3. Criatividade e Interdisciplinaridade: A Colcha de Retalhos e Coraline Maker:</b><br>
         O cruzamento entre literatura, arte e metodologias ativas produziu resultados notáveis. O projeto Coraline Maker engajou alunos na modelagem de personagens em biscuit, enquanto a Colcha de Retalhos estimulou a expressão poética e a pintura em tecido.
@@ -586,7 +610,7 @@ with tab_reflections:
         st.markdown("""
         <div class='text-content'>
         <b>1. A Ação Preventiva do NEPRE e o Combate às Violências:</b><br>
-        Inspirados nas diretrizes do NEPRE (Núcleo de Prevenção às Violências Escolares), os projetos de acolhimento implementaram estratégias concretas, como a caixa física e o QR Code do 'Correio de Denúncias'. Essas ferramentas garantiram um canal seguro e anônimo para o relato de abusos, permitindo encaminhamentos confidenciais.<br><br>
+        Inspirados nas diretrizes do NEPRE (Núcleo de Prevenção às Violências Escolares), os projetos de acolhimento implementaram estratégias concretas, como a caixa física e o QR Code do 'Correio de Denúncias'. Estas ferramentas garantiram um canal seguro e anônimo para o relato de abusos, permitindo encaminhamentos confidenciais.<br><br>
         
         <b>2. Educação para as Relações Étnico-Raciais (ERER) e Inclusão:</b><br>
         O PIBID demonstrou forte engajamento ético e social ao transpor temas complexos para dinâmicas escolares. O Projeto ERER valorizou a diversidade cultural e o combate ao racismo estrutural através de análises literárias e confecção de máscaras africanas, aproximando os estudantes do reconhecimento da ancestralidade afro-brasileira.<br><br>
@@ -648,6 +672,6 @@ with tab_search:
         else:
             st.success(f"Encontrado {len(search_results)} relato(s) correspondente(s)!")
             for idx, row in search_results.iterrows():
-                with st.expander(f"📌 {safe_str(row.get('Projeto_Acao'))} — {safe_str(row.get('Escola'))}"):
-                    st.markdown(f"**Supervisor:** `{safe_str(row.get('Supervisor'))}`\n\n**Metodologia:** {safe_str(row.get('Metodologia'))}")
-                    st.markdown(f"**A Voz do Bolsista:** {safe_str(row.get('Voz_Bolsista'))}")
+                with st.expander(f"📌 {safe_str(row.get('Projeto_Acao', ''))} — {safe_str(row.get('Escola', ''))}"):
+                    st.markdown(f"**Supervisor:** `{safe_str(row.get('Supervisor', ''))}`\n\n**Metodologia:** {safe_str(row.get('Metodologia', ''))}")
+                    st.markdown(f"**A Voz do Bolsista:** {safe_str(row.get('Voz_Bolsista', ''))}")
