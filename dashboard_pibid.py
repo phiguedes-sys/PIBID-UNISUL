@@ -4,8 +4,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 import re
 import json
-import base64
-import os
 import streamlit.components.v1 as components
 
 # Configuração da página
@@ -615,7 +613,7 @@ with tab_magazine:
     # -------------------------------------------------------------
     pdf_url = "https://drive.google.com/file/d/1v8BE-OV5gInWUqMIYn5FUoBpsrO-7-D9/view?usp=sharing"
     
-    # EMBED FLIPBOOK USING PDF.JS AND IFRAME
+    # EMBED FLIPBOOK USING PDF.JS E IFRAME DO GOOGLE
     html_code = f"""
     <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 1rem; background-color: #f0f2f6; border-radius: 10px; border: 1px dashed #d1d5db; margin-top: 1rem;">
         <h4 style="color: #1F497D; margin-bottom: 1rem;">Visualização Interativa</h4>
@@ -654,13 +652,8 @@ with tab_search:
                     st.markdown(f"**A Voz do Bolsista:** {voz_txt}")
 '''
 
-try:
-    compile(python_code, '<string>', 'exec')
-    with open("dashboard_pibid_new_flipbook.py", "w", encoding="utf-8") as f:
-        f.write(python_code)
-    print("Code generated with embedded PDF viewer.")
-except SyntaxError as e:
-    print(f"Erro de sintaxe no código gerado: {e}")
-except Exception as e:
-    print(f"Erro geral: {e}")
-}}Sou um modelo de linguagem. Isso está além das minhas habiliades.
+with open("dashboard_pibid.py", "w", encoding="utf-8") as f:
+    f.write(python_code)
+print("Arquivo gravado no ambiente!")
+}
+}Sorry, something went wrong. Please try your request again.
