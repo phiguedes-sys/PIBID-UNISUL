@@ -4,7 +4,6 @@ import plotly.express as px
 import plotly.graph_objects as go
 import re
 import json
-import base64
 import os
 import streamlit.components.v1 as components
 
@@ -34,6 +33,10 @@ st.markdown("""
 # -------------------------------------------------------------
 # FUNÇÕES DE UTILIDADE E IMAGENS
 # -------------------------------------------------------------
+def safe_str(val):
+    if pd.isna(val): return ""
+    return str(val).strip()
+
 def clean_file_name(name):
     if not name: return ""
     name = re.sub(r"\.[a-zA-Z0-9]+$", "", name)
@@ -55,7 +58,7 @@ def get_direct_img_url(url):
         return "folder", url, file_name
     match_id = re.search(r"id=([a-zA-Z0-9-_]+)", url)
     if not match_id: match_id = re.search(r"/file/d/([a-zA-Z0-9-_]+)", url)
-    if match_id: return "image", "https://drive.google.com/thumbnail?id=" + match_id.group(1) + "&sz=w1000", file_name
+    if match_id: return "image", f"https://drive.google.com/thumbnail?id={match_id.group(1)}&sz=w1000", file_name
     if url.startswith("http"): return "image", url, file_name
     return "invalid", url, file_name
 
@@ -72,21 +75,21 @@ def render_image_carousel(images_list, interval_ms=4000, height=350):
     urls = [img["url"] for img in images_list]
     js_images = json.dumps(urls)
     
-    html_code = """
+    html_code = f"""
     <!DOCTYPE html>
     <html>
     <head>
     <style>
-        body { margin: 0; padding: 0; overflow: hidden; font-family: 'Calibri', 'Arial', sans-serif; background-color: transparent; }
-        .carousel-container { width: 100%; height: """ + str(height) + """px; position: relative; overflow: hidden; border-radius: 8px; box-shadow: 0px 4px 10px rgba(0,0,0,0.15); border: 1px solid #DCE6F1; }
-        .slide { width: 100%; height: 100%; position: absolute; top: 0; left: 0; opacity: 0; transition: opacity 1.0s ease-in-out; z-index: 1; }
-        .slide.active { opacity: 1; z-index: 2; }
-        .slide img { width: 100%; height: 100%; object-fit: cover; }
-        .caption-bar { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(31, 73, 125, 0.85); color: white; padding: 10px 15px; font-size: 0.9rem; text-align: center; z-index: 3; font-weight: bold; letter-spacing: 0.5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }
-        .dots { position: absolute; bottom: 45px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 4; }
-        .dot { width: 10px; height: 10px; background: rgba(255, 255, 255, 0.5); border-radius: 50%; cursor: pointer; transition: background 0.3s, transform 0.3s; }
-        .dot.active { background: #E2EFDA; transform: scale(1.2); box-shadow: 0 0 5px rgba(0,0,0,0.5); }
-        .dot:hover { background: white; }
+        body {{ margin: 0; padding: 0; overflow: hidden; font-family: 'Calibri', 'Arial', sans-serif; background-color: transparent; }}
+        .carousel-container {{ width: 100%; height: {height}px; position: relative; overflow: hidden; border-radius: 8px; box-shadow: 0px 4px 10px rgba(0,0,0,0.15); border: 1px solid #DCE6F1; }}
+        .slide {{ width: 100%; height: 100%; position: absolute; top: 0; left: 0; opacity: 0; transition: opacity 1.0s ease-in-out; z-index: 1; }}
+        .slide.active {{ opacity: 1; z-index: 2; }}
+        .slide img {{ width: 100%; height: 100%; object-fit: cover; }}
+        .caption-bar {{ position: absolute; bottom: 0; left: 0; right: 0; background: rgba(31, 73, 125, 0.85); color: white; padding: 10px 15px; font-size: 0.9rem; text-align: center; z-index: 3; font-weight: bold; letter-spacing: 0.5px; text-shadow: 1px 1px 2px rgba(0,0,0,0.5); }}
+        .dots {{ position: absolute; bottom: 45px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 4; }}
+        .dot {{ width: 10px; height: 10px; background: rgba(255, 255, 255, 0.5); border-radius: 50%; cursor: pointer; transition: background 0.3s, transform 0.3s; }}
+        .dot.active {{ background: #E2EFDA; transform: scale(1.2); box-shadow: 0 0 5px rgba(0,0,0,0.5); }}
+        .dot:hover {{ background: white; }}
     </style>
     </head>
     <body>
@@ -96,36 +99,36 @@ def render_image_carousel(images_list, interval_ms=4000, height=350):
         <div class="caption-bar" id="caption-el"></div>
     </div>
     <script>
-        const urls = """ + js_images + """;
-        const interval = """ + str(interval_ms) + """;
+        const urls = {js_images};
+        const interval = {interval_ms};
         const slidesWrapper = document.getElementById('slides-wrapper');
         const dotsWrapper = document.getElementById('dots-wrapper');
         const captionEl = document.getElementById('caption-el');
         
-        urls.forEach((url, index) => {
+        urls.forEach((url, index) => {{
             const slide = document.createElement('div');
             slide.className = 'slide' + (index === 0 ? ' active' : '');
-            slide.innerHTML = `<img src="${url}" alt="Slide ${index + 1}">`;
+            slide.innerHTML = `<img src="${{url}}" alt="Slide ${{index + 1}}">`;
             slidesWrapper.appendChild(slide);
             const dot = document.createElement('div');
             dot.className = 'dot' + (index === 0 ? ' active' : '');
             dot.addEventListener('click', () => showSlide(index));
             dotsWrapper.appendChild(dot);
-        });
-        captionEl.innerText = `Foto 1 de ${urls.length}`;
+        }});
+        captionEl.innerText = `Foto 1 de ${{urls.length}}`;
         let currentIndex = 0;
         let slideInterval = setInterval(nextSlide, interval);
-        function showSlide(index) {
+        function showSlide(index) {{
             clearInterval(slideInterval);
             document.querySelectorAll('.slide')[currentIndex].classList.remove('active');
             document.querySelectorAll('.dot')[currentIndex].classList.remove('active');
             currentIndex = index;
             document.querySelectorAll('.slide')[currentIndex].classList.add('active');
             document.querySelectorAll('.dot')[currentIndex].classList.add('active');
-            captionEl.innerText = `Foto ${currentIndex + 1} de ${urls.length}`;
+            captionEl.innerText = `Foto ${{currentIndex + 1}} de ${{urls.length}}`;
             slideInterval = setInterval(nextSlide, interval);
-        }
-        function nextSlide() { showSlide((currentIndex + 1) % urls.length); }
+        }}
+        function nextSlide() {{ showSlide((currentIndex + 1) % urls.length); }}
     </script>
     </body>
     </html>
@@ -317,14 +320,14 @@ def load_data(gsheets_url=None):
             match = re.search(r"/d/([a-zA-Z0-9-_]+)", gsheets_url)
             if match:
                 sheet_id = match.group(1)
-                export_url = "https://docs.google.com/spreadsheets/d/" + sheet_id + "/export?format=xlsx"
+                export_url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=xlsx"
                 xls = pd.ExcelFile(export_url)
                 sheets = xls.sheet_names
                 
                 narr_sheet = next((s for s in sheets if "Narrativas" in s or "Qualitativas" in s), None)
                 if narr_sheet:
                     df_narr_temp = pd.read_excel(export_url, sheet_name=narr_sheet)
-                    if not df_narr_temp.empty:
+                    if not df_narr_temp.empty and len(df_narr_temp) > 0:
                         rules_narrativas = [
                             ("Escola", ["escola", "núcleo", "nucleo"]),
                             ("Supervisor", ["supervisor", "nome completo do supervisor"]),
@@ -336,12 +339,15 @@ def load_data(gsheets_url=None):
                             ("Dificuldades", ["dificuldade", "superação", "superacao", "desafios", "problema"]),
                             ("Foto", ["foto", "link", "imagem", "registro"])
                         ]
-                        df_narrativas = map_columns_safely(df_narr_temp, rules_narrativas)
+                        df_mapped = map_columns_safely(df_narr_temp, rules_narrativas)
+                        # Regra de segurança: só substitui se encontrou as colunas essenciais
+                        if "Escola" in df_mapped.columns and "Projeto_Acao" in df_mapped.columns:
+                            df_narrativas = df_mapped
                         
                 vis_sheet = next((s for s in sheets if "Respostas" in s or "Visita" in s or "Formulario" in s), None)
                 if vis_sheet:
                     df_vis_temp = pd.read_excel(export_url, sheet_name=vis_sheet)
-                    if not df_vis_temp.empty:
+                    if not df_vis_temp.empty and len(df_vis_temp) > 0:
                         rules_visitas = [
                             ("Carimbo", ["carimbo", "timestamp", "data/hora"]),
                             ("Email", ["email", "e-mail", "endereço", "endereco"]),
@@ -351,11 +357,13 @@ def load_data(gsheets_url=None):
                             ("Ficha_Avaliacao", ["avaliação", "avaliacao", "ficha de avaliação"]),
                             ("Ficha_Frequencia", ["frequencia", "frequência", "ficha de frequencia"])
                         ]
-                        df_visitas = map_columns_safely(df_vis_temp, rules_visitas)
+                        df_visitas_mapped = map_columns_safely(df_vis_temp, rules_visitas)
+                        if "Supervisor" in df_visitas_mapped.columns and "Fotos" in df_visitas_mapped.columns:
+                            df_visitas = df_visitas_mapped
                         
                 st.sidebar.success("Sincronização com o Google Sheets concluída!")
         except Exception as e:
-            st.sidebar.error("Erro de conexão: certifique-se de que a planilha está compartilhada como 'Leitor público'.")
+            st.sidebar.error("Erro de conexão: Verifique se a planilha tem permissão de 'Leitor público'.")
             
     for col in ["Escola", "Supervisor", "Projeto_Acao", "Periodo_Bimestre", "Metodologia", "Impacto_Escola", "Voz_Bolsista", "Dificuldades", "Foto"]:
         if col not in df_narrativas.columns: df_narrativas[col] = ""
@@ -422,46 +430,44 @@ with tab_narr:
     else:
         for idx, row in df_filtered_narr.iterrows():
             with st.container():
-                st.markdown(
-                    '<div class="qualitative-card">'
-                    '<div class="card-header">📌 ' + str(row.get('Projeto_Acao', '')) + '</div>'
-                    '<span class="badge-escola">🏢 ' + str(row.get('Escola', '')) + '</span>'
-                    '<span class="badge-supervisor">👨‍🏫 Supervisor: ' + str(row.get('Supervisor', '')) + '</span>'
-                    '<span class="badge-periodo">📅 ' + str(row.get('Periodo_Bimestre', '')) + '</span>'
-                    '</div>',
-                    unsafe_allow_html=True
-                )
+                st.markdown(f"""
+                <div class="qualitative-card">
+                    <div class="card-header">📌 {safe_str(row.get('Projeto_Acao'))}</div>
+                    <span class="badge-escola">🏢 {safe_str(row.get('Escola'))}</span>
+                    <span class="badge-supervisor">👨‍🏫 Supervisor: {safe_str(row.get('Supervisor'))}</span>
+                    <span class="badge-periodo">📅 {safe_str(row.get('Periodo_Bimestre'))}</span>
+                </div>
+                """, unsafe_allow_html=True)
                 
             col_text, col_visual = st.columns([3, 2])
             with col_text:
                 st.markdown("<p class='section-title'>📖 Como foi desenvolvido (Metodologia)</p>", unsafe_allow_html=True)
-                st.markdown("<p class='text-content'>" + str(row.get('Metodologia', '')) + "</p>", unsafe_allow_html=True)
+                st.markdown(f"<p class='text-content'>{safe_str(row.get('Metodologia'))}</p>", unsafe_allow_html=True)
                 
                 st.markdown("<p class='section-title'>🌱 Impacto Social e Pedagógico na Escola</p>", unsafe_allow_html=True)
-                st.markdown("<p class='text-content'>" + str(row.get('Impacto_Escola', '')) + "</p>", unsafe_allow_html=True)
+                st.markdown(f"<p class='text-content'>{safe_str(row.get('Impacto_Escola'))}</p>", unsafe_allow_html=True)
                 
                 st.markdown("<p class='section-title'>👩‍🏫 A Voz do Bolsista (Prática Reflexiva)</p>", unsafe_allow_html=True)
-                voz_bolsista_texto = str(row.get('Voz_Bolsista', '')).replace('"', '&quot;')
-                st.markdown("<p class='text-content'><i>\"" + voz_bolsista_texto + "\"</i></p>", unsafe_allow_html=True)
+                st.markdown(f"<p class='text-content'><i>\"{safe_str(row.get('Voz_Bolsista'))}\"</i></p>", unsafe_allow_html=True)
                 
                 st.markdown("<p class='section-title'>⚠️ Desafios & Como Foram Superados</p>", unsafe_allow_html=True)
-                st.markdown("<p class='text-content'>" + str(row.get('Dificuldades', '')) + "</p>", unsafe_allow_html=True)
+                st.markdown(f"<p class='text-content'>{safe_str(row.get('Dificuldades'))}</p>", unsafe_allow_html=True)
                 
             with col_visual:
                 st.markdown("<p class='section-title'>📸 Registro Visual do Núcleo</p>", unsafe_allow_html=True)
-                sup_narrative = str(row.get("Supervisor", "")).strip()
+                sup_narrative = safe_str(row.get("Supervisor")).strip()
                 fotos_reais = []
                 
                 if not df_visitas.empty and sup_narrative:
                     for _, v_row in df_visitas.iterrows():
-                        v_sup = str(v_row.get("Supervisor", "")).strip()
+                        v_sup = safe_str(v_row.get("Supervisor")).strip()
                         if sup_narrative.lower() in v_sup.lower() or v_sup.lower() in sup_narrative.lower():
                             processed_v = process_links(v_row.get("Fotos", ""))
                             fotos_reais.extend([p for p in processed_v if p["type"] == "image"])
                             
                 if fotos_reais:
                     if len(fotos_reais) == 1:
-                        st.image(fotos_reais[0]["url"], use_container_width=True, caption="Registro - " + sup_narrative)
+                        st.image(fotos_reais[0]["url"], use_container_width=True, caption=f"Registro - {sup_narrative}")
                     else:
                         render_image_carousel(fotos_reais, interval_ms=4000, height=380)
                 else:
@@ -526,77 +532,84 @@ with tab_reflections:
     
     with sub_tab1:
         st.markdown("#### 👩‍🏫 A Articulação entre Teoria e Prática e a Formação Docente")
-        st.markdown(
-            "<div class='text-content'>"
-            "<b>1. A Práxis Pedagógica e a Inserção na Cultura Escolar:</b><br>"
-            "O PIBID UNISUL se estabelece como um espaço crucial para o desenvolvimento do perfil profissional docente, atuando como uma ponte viva entre as formulações teóricas acadêmicas e o cotidiano dinâmico do ambiente escolar. A imersão precoce atua como um catalisador na construção da identidade docente, reduzindo a ansiedade inerente ao início da carreira e substituindo-a pelo desenvolvimento progressivo de habilidades de regência compartilhada, liderança didática, gestão de turmas e autoridade pedagógica.<br><br>"
-            "<b>2. A Construção do Olhar Diagnóstico e Investigativo:</b><br>"
-            "O ponto de partida para a práxis transformadora é o reconhecimento do território educativo. A elaboração de diagnósticos da unidade escolar e a análise crítica do Projeto Político-Pedagógico (PPP) permitem que os licenciandos identifiquem as reais necessidades estruturais, sociais e pedagógicas da instituição. Ao compreenderem o PPP como um documento norteador, os acadêmicos desenvolvem a capacidade de planejar intervenções estratégicas que respondam diretamente aos desafios locais.<br><br>"
-            "<b>3. Memoriais Autobiográficos e a Estética da Recepção:</b><br>"
-            "Como estratégia de amadurecimento subjetivo, os bolsistas foram convidados a elaborar memoriais descritivos inspirados na leitura da obra <i>'Infância'</i>, de Graciliano Ramos. Essa atividade propiciou uma profunda reflexão sobre as próprias trajetórias escolares, conectando memórias pessoais de exclusão, acolhimento e superação às passagens do livro.<br><br>"
-            "<b>4. O Conselho de Classe como Dispositivo de Formação Prática Crítica:</b><br>"
-            "A participação dos bolsistas como ouvintes em Conselhos de Classe desponta como um dos momentos formativos mais potentes do PIBID. Nesses espaços, os licenciandos confrontam suas concepções ideais de avaliação com os desafios práticos do fechamento de notas e do uso de plataformas de gestão.<br><br>"
-            "<b>5. O ID como Facilitador Pedagógico e Profissional Reflexivo:</b><br>"
-            "Ao assumirem gradativamente a regência e o desenvolvimento de projetos, os universitários exercitam sua função de facilitadores pedagógicos. O confronto com a heterogeneidade das turmas exige flexibilidade e a constante adaptação das metodologias ativas. Em suma, a articulação vivenciada no PIBID consolida uma identidade profissional pautada na escuta sensível, no compromisso ético e no entendimento da escola como um espaço vivo."
-            "</div>",
-            unsafe_allow_html=True
-        )
+        st.markdown("""
+        <div class='text-content'>
+        <b>1. A Práxis Pedagógica e a Inserção na Cultura Escolar:</b><br>
+        O PIBID UNISUL se estabelece como um espaço crucial para o desenvolvimento do perfil profissional docente, atuando como uma ponte viva entre as formulações teóricas acadêmicas e o cotidiano dinâmico do ambiente escolar. A imersão precoce atua como um catalisador na construção da identidade docente, reduzindo a ansiedade inerente ao início da carreira e substituindo-a pelo desenvolvimento progressivo de habilidades de regência compartilhada, liderança didática, gestão de turmas e autoridade pedagógica.<br><br>
+        
+        <b>2. A Construção do Olhar Diagnóstico e Investigativo:</b><br>
+        O ponto de partida para a práxis transformadora é o reconhecimento do território educativo. A elaboração de diagnósticos da unidade escolar e a análise crítica do Projeto Político-Pedagógico (PPP) permitem que os licenciandos identifiquem as reais necessidades estruturais, sociais e pedagógicas da instituição. Ao compreenderem o PPP como um documento norteador, os acadêmicos desenvolvem a capacidade de planejar intervenções estratégicas que respondam diretamente aos desafios locais.<br><br>
+
+        <b>3. Memoriais Autobiográficos e a Estética da Recepção:</b><br>
+        Como estratégia de amadurecimento subjetivo, os bolsistas foram convidados a elaborar memoriais descritivos inspirados na leitura da obra <i>'Infância'</i>, de Graciliano Ramos. Essa atividade propiciou uma profunda reflexão sobre as próprias trajetórias escolares, conectando memórias pessoais de exclusão, acolhimento e superação às passagens do livro.<br><br>
+        
+        <b>4. O Conselho de Classe como Dispositivo de Formação Prática Crítica:</b><br>
+        A participação dos bolsistas como ouvintes em Conselhos de Classe desponta como um dos momentos formativos mais potentes do PIBID. Nesses espaços, os licenciandos confrontam suas concepções ideais de avaliação com os desafios práticos do fechamento de notas e do uso de plataformas de gestão.<br><br>
+        
+        <b>5. O ID como Facilitador Pedagógico e Profissional Reflexivo:</b><br>
+        Ao assumirem gradativamente a regência e o desenvolvimento de projetos, os universitários exercitam sua função de facilitadores pedagógicos. O confronto com a heterogeneidade das turmas exige flexibilidade e a constante adaptação das metodologias ativas. Em suma, a articulação vivenciada no PIBID consolida uma identidade profissional pautada na escuta sensível, no compromisso ético e no entendimento da escola como um espaço vivo.
+        </div>
+        """, unsafe_allow_html=True)
         
     with sub_tab2:
         st.markdown("#### 🤝 O Papel do PIBID na Integração da Comunidade Escolar")
-        st.markdown(
-            "<div class='text-content'>"
-            "<b>1. Dinamização da Cultura Escolar e Vínculo Universidade-Comunidade:</b><br>"
-            "A presença ativa do PIBID revitalizou o ambiente escolar, promovendo maior integração entre a equipe pedagógica, os alunos e a comunidade. Iniciativas como o projeto Família na Escola e a participação na tradicional Festa Junina demonstram o compromisso do programa em fortalecer os laços comunitários e valorizar a cultura local.<br><br>"
-            "<b>2. Democratização do Acesso ao Ensino Superior:</b><br>"
-            "O projeto Desvendando o Futuro ilustra o papel transformador do PIBID na orientação de alunos do Ensino Médio. Através de palestras e dinâmicas, os bolsistas informaram sobre programas de fomento educacional e bolsas de estudo, buscando democratizar o acesso à universidade e despertar novas perspectivas acadêmicas.<br><br>"
-            "<b>3. Valorização da Literatura e Revitalização de Espaços:</b><br>"
-            "O resgate da biblioteca como espaço vivo e dinâmico foi um marco nas ações do programa. A Sociedade Secreta Literária e a criação de ambientes acolhedores de leitura ressignificaram a relação dos alunos com a literatura, tornando-a uma prática prazerosa e socialmente engajada."
-            "</div>",
-            unsafe_allow_html=True
-        )
+        st.markdown("""
+        <div class='text-content'>
+        <b>1. Dinamização da Cultura Escolar e Vínculo Universidade-Comunidade:</b><br>
+        A presença ativa do PIBID revitalizou o ambiente escolar, promovendo maior integração entre a equipe pedagógica, os alunos e a comunidade. Iniciativas como o projeto Família na Escola e a participação na tradicional Festa Junina demonstram o compromisso do programa em fortalecer os laços comunitários e valorizar a cultura local.<br><br>
+        
+        <b>2. Democratização do Acesso ao Ensino Superior:</b><br>
+        O projeto Desvendando o Futuro ilustra o papel transformador do PIBID na orientação de alunos do Ensino Médio. Através de palestras e dinâmicas, os bolsistas informaram sobre programas de fomento educacional e bolsas de estudo, buscando democratizar o acesso à universidade e despertar novas perspectivas acadêmicas.<br><br>
+        
+        <b>3. Valorização da Literatura e Revitalização de Espaços:</b><br>
+        O resgate da biblioteca como espaço vivo e dinâmico foi um marco nas ações do programa. A Sociedade Secreta Literária e a criação de ambientes acolhedores de leitura ressignificaram a relação dos alunos com a literatura, tornando-a uma prática prazerosa e socialmente engajada.
+        </div>
+        """, unsafe_allow_html=True)
 
     with sub_tab3:
         st.markdown("#### 🧠 Práticas Lúdicas e Gamificação na Aprendizagem")
-        st.markdown(
-            "<div class='text-content'>"
-            "<b>1. Recreio Interativo: O Lúdico como Ferramenta de Socialização:</b><br>"
-            "A transformação dos intervalos escolares em espaços de Recreio Interativo demonstrou o potencial da gamificação na mediação de conflitos e na promoção da convivência saudável. A estruturação de jogos cooperativos e atividades direcionadas reduziu significativamente os episódios de indisciplina, transformando o recreio em um momento de inclusão.<br><br>"
-            "<b>2. Xadrez na Escola: Estratégia e Concentração:</b><br>"
-            "A implementação do Xadrez na Escola, especialmente em parceria com o Atendimento Educacional Especializado (AEE), evidenciou como o jogo pode ser um aliado no desenvolvimento cognitivo e socioemocional. A prática do xadrez estimulou o raciocínio lógico-matemático, a paciência e a capacidade de tomada de decisão.<br><br>"
-            "<b>3. Criatividade e Interdisciplinaridade: A Colcha de Retalhos e Coraline Maker:</b><br>"
-            "O cruzamento entre literatura, arte e metodologias ativas produziu resultados notáveis. O projeto Coraline Maker engajou alunos na modelagem de personagens em biscuit, enquanto a Colcha de Retalhos estimulou a expressão poética e a pintura em tecido."
-            "</div>",
-            unsafe_allow_html=True
-        )
+        st.markdown("""
+        <div class='text-content'>
+        <b>1. Recreio Interativo: O Lúdico como Ferramenta de Socialização:</b><br>
+        A transformação dos intervalos escolares em espaços de Recreio Interativo demonstrou o potencial da gamificação na mediação de conflitos e na promoção da convivência saudável. A estruturação de jogos cooperativos e atividades direcionadas reduziu significativamente os episódios de indisciplina, transformando o recreio em um momento de inclusão.<br><br>
+        
+        <b>2. Xadrez na Escola: Estratégia e Concentração:</b><br>
+        A implementação do Xadrez na Escola, especialmente em parceria com o Atendimento Educacional Especializado (AEE), evidenciou como o jogo pode ser um aliado no desenvolvimento cognitivo e socioemocional. A prática do xadrez estimulou o raciocínio lógico-matemático, a paciência e a capacidade de tomada de decisão.<br><br>
+        
+        <b>3. Criatividade e Interdisciplinaridade: A Colcha de Retalhos e Coraline Maker:</b><br>
+        O cruzamento entre literatura, arte e metodologias ativas produziu resultados notáveis. O projeto Coraline Maker engajou alunos na modelagem de personagens em biscuit, enquanto a Colcha de Retalhos estimulou a expressão poética e a pintura em tecido.
+        </div>
+        """, unsafe_allow_html=True)
         
     with sub_tab4:
         st.markdown("#### ⚖️ Educação Inclusiva e Acolhimento Escolar")
-        st.markdown(
-            "<div class='text-content'>"
-            "<b>1. A Ação Preventiva do NEPRE e o Combate às Violências:</b><br>"
-            "Inspirados nas diretrizes do NEPRE (Núcleo de Prevenção às Violências Escolares), os projetos de acolhimento implementaram estratégias concretas, como a caixa física e o QR Code do 'Correio de Denúncias'. Essas ferramentas garantiram um canal seguro e anônimo para o relato de abusos, permitindo encaminhamentos confidenciais.<br><br>"
-            "<b>2. Educação para as Relações Étnico-Raciais (ERER) e Inclusão:</b><br>"
-            "O PIBID demonstrou forte engajamento ético e social ao transpor temas complexos para dinâmicas escolares. O Projeto ERER valorizou a diversidade cultural e o combate ao racismo estrutural através de análises literárias e confecção de máscaras africanas, aproximando os estudantes do reconhecimento da ancestralidade afro-brasileira.<br><br>"
-            "<b>3. Acolhimento na Educação de Jovens e Adultos (EJA):</b><br>"
-            "As ações no CEJA evidenciaram a necessidade de uma pedagogia sensível às realidades dos estudantes adultos, frequentemente impactados por longas jornadas de trabalho. A aplicação da pedagogia do afeto freireana, por meio de rodas de conversa e cafés literários, promoveu um letramento emancipatório que valorizou as memórias e saberes prévios dos alunos."
-            "</div>",
-            unsafe_allow_html=True
-        )
+        st.markdown("""
+        <div class='text-content'>
+        <b>1. A Ação Preventiva do NEPRE e o Combate às Violências:</b><br>
+        Inspirados nas diretrizes do NEPRE (Núcleo de Prevenção às Violências Escolares), os projetos de acolhimento implementaram estratégias concretas, como a caixa física e o QR Code do 'Correio de Denúncias'. Essas ferramentas garantiram um canal seguro e anônimo para o relato de abusos, permitindo encaminhamentos confidenciais.<br><br>
+        
+        <b>2. Educação para as Relações Étnico-Raciais (ERER) e Inclusão:</b><br>
+        O PIBID demonstrou forte engajamento ético e social ao transpor temas complexos para dinâmicas escolares. O Projeto ERER valorizou a diversidade cultural e o combate ao racismo estrutural através de análises literárias e confecção de máscaras africanas, aproximando os estudantes do reconhecimento da ancestralidade afro-brasileira.<br><br>
+        
+        <b>3. Acolhimento na Educação de Jovens e Adultos (EJA):</b><br>
+        As ações no CEJA evidenciaram a necessidade de uma pedagogia sensível às realidades dos estudantes adultos, frequentemente impactados por longas jornadas de trabalho. A aplicação da pedagogia do afeto freireana, por meio de rodas de conversa e cafés literários, promoveu um letramento emancipatório que valorizou as memórias e saberes prévios dos alunos.
+        </div>
+        """, unsafe_allow_html=True)
         
     with sub_tab5:
         st.markdown("#### 💡 Desafios e Superação Pedagógica")
-        st.markdown(
-            "<div class='text-content'>"
-            "<b>1. Criatividade frente à Escassez de Recursos:</b><br>"
-            "Os relatórios narram com honestidade as limitações infraestruturais das escolas. Diante desse cenário, os bolsistas mobilizaram estratégias criativas, como o uso de PDFs licenciados em tablets, a confecção de materiais pedagógicos alternativos e a organização de campanhas de doação, demonstrando resiliência e capacidade de adaptação.<br><br>"
-            "<b>2. Flexibilidade Diante das Dinâmicas Escolares:</b><br>"
-            "O calendário escolar, sujeito a alterações, exigiu dos bolsistas habilidades de replanejamento ágil. As equipes demonstraram notável flexibilidade ao converter imprevistos e atividades extracurriculares em oportunidades de intervenção pedagógica.<br><br>"
-            "<b>3. Engajamento Estudantil e a Prática Reflexiva:</b><br>"
-            "A resistência inicial de alguns alunos à leitura ou à produção escrita foi contornada por meio de abordagens lúdicas, dinâmicas interativas e acompanhamento individualizado. O processo de tentativa, revisão e recomeço foi assimilado como parte intrínseca do fazer docente."
-            "</div>",
-            unsafe_allow_html=True
-        )
+        st.markdown("""
+        <div class='text-content'>
+        <b>1. Criatividade frente à Escassez de Recursos:</b><br>
+        Os relatórios narram com honestidade as limitações infraestruturais das escolas. Diante desse cenário, os bolsistas mobilizaram estratégias criativas, como o uso de PDFs licenciados em tablets, a confecção de materiais pedagógicos alternativos e a organização de campanhas de doação, demonstrando resiliência e capacidade de adaptação.<br><br>
+        
+        <b>2. Flexibilidade Diante das Dinâmicas Escolares:</b><br>
+        O calendário escolar, sujeito a alterações, exigiu dos bolsistas habilidades de replanejamento ágil. As equipes demonstraram notável flexibilidade ao converter imprevistos e atividades extracurriculares em oportunidades de intervenção pedagógica.<br><br>
+        
+        <b>3. Engajamento Estudantil e a Prática Reflexiva:</b><br>
+        A resistência inicial de alguns alunos à leitura ou à produção escrita foi contornada por meio de abordagens lúdicas, dinâmicas interativas e acompanhamento individualizado. O processo de tentativa, revisão e recomeço foi assimilado como parte intrínseca do fazer docente.
+        </div>
+        """, unsafe_allow_html=True)
 
 with tab_magazine:
     st.markdown("### 📚 Revista de Experiências Pedagógicas PIBID/UNISUL")
@@ -604,18 +617,18 @@ with tab_magazine:
     
     flipbook_url = "https://heyzine.com/flip-book/3b51802cc2.html"
     
-    html_code = (
-        "<div style='display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 1rem; padding: 1rem; background-color: #f8f9fa; border-radius: 12px; border: 2px dashed #1F497D;'>"
-        "<iframe allowfullscreen='true' scrolling='no' style='border: none; width: 100%; height: 600px; border-radius: 8px;' src='" + flipbook_url + "'></iframe>"
-        "<div style='margin-top: 15px;'>"
-        "<a href='" + flipbook_url + "' target='_blank' style='text-decoration: none;'>"
-        "<div style='background-color: #1F497D; color: white; padding: 0.8rem 2rem; border-radius: 25px; font-weight: bold; cursor: pointer; text-align: center;'>"
-        "Abrir Revista em Tela Cheia ↗"
-        "</div>"
-        "</a>"
-        "</div>"
-        "</div>"
-    )
+    html_code = f"""
+    <div style='display: flex; flex-direction: column; align-items: center; justify-content: center; margin-top: 1rem; padding: 1rem; background-color: #f8f9fa; border-radius: 12px; border: 2px dashed #1F497D;'>
+        <iframe allowfullscreen='true' scrolling='no' style='border: none; width: 100%; height: 600px; border-radius: 8px;' src='{flipbook_url}'></iframe>
+        <div style='margin-top: 15px;'>
+            <a href='{flipbook_url}' target='_blank' style='text-decoration: none;'>
+                <div style='background-color: #1F497D; color: white; padding: 0.8rem 2rem; border-radius: 25px; font-weight: bold; cursor: pointer; text-align: center;'>
+                    Abrir Revista em Tela Cheia ↗
+                </div>
+            </a>
+        </div>
+    </div>
+    """
     st.markdown(html_code, unsafe_allow_html=True)
 
 with tab_search:
@@ -633,9 +646,8 @@ with tab_search:
         if search_results.empty: 
             st.warning("Nenhum relato encontrado.")
         else:
-            st.success("Encontrado " + str(len(search_results)) + " relato(s) correspondente(s)!")
+            st.success(f"Encontrado {len(search_results)} relato(s) correspondente(s)!")
             for idx, row in search_results.iterrows():
-                with st.expander("📌 " + str(row.get('Projeto_Acao', '')) + " — " + str(row.get('Escola', ''))):
-                    st.markdown("**Supervisor:** `" + str(row.get('Supervisor', '')) + "`\n\n**Metodologia:** " + str(row.get('Metodologia', '')))
-                    voz_txt = str(row.get('Voz_Bolsista', ''))
-                    st.markdown("**A Voz do Bolsista:** " + voz_txt)
+                with st.expander(f"📌 {safe_str(row.get('Projeto_Acao'))} — {safe_str(row.get('Escola'))}"):
+                    st.markdown(f"**Supervisor:** `{safe_str(row.get('Supervisor'))}`\n\n**Metodologia:** {safe_str(row.get('Metodologia'))}")
+                    st.markdown(f"**A Voz do Bolsista:** {safe_str(row.get('Voz_Bolsista'))}")
